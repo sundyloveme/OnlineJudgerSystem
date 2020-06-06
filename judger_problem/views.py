@@ -5,9 +5,11 @@ from django.views import View
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.views.decorators.csrf import csrf_exempt
 import requests
+from django.shortcuts import HttpResponse
 
-from .models import Problem, SubmitStatus
+from .models import Problem, SubmitStatus, ProblemLabel, Notes
 
 
 @method_decorator(login_required, name="dispatch")
@@ -15,6 +17,14 @@ class ProblemList(View):
     """
     题目列表视图
     """
+
+    def get_problem_label(self):
+        """
+        获得题目标签
+        :return:
+        """
+        labels = ProblemLabel.objects.all()
+        return labels
 
     def get(self, request):
         proble_list_all = Problem.get_problem_list()
@@ -33,8 +43,32 @@ class ProblemList(View):
             "proble_lists": proble_lists,
             "problem_count": problem_count,
             "solve_count": solve_count,
+            "labels": self.get_problem_label(),
         }
         return render(request, template_name="judger_problem/templates/problem_list.html", context=context)
+
+
+@login_required
+@csrf_exempt
+def saveNote(request, problem_id):
+    """
+    处理保存笔记的视图
+    :param request:
+    :param problem_id:
+    :return:
+    """
+    if request.method == "POST":
+        note = Notes.objects.filter(fk_problem_id=problem_id, author_id=request.user.id)
+        if len(note) != 0:
+            note[0].content = request.POST['note_content']
+            note[0].save()
+        else:
+            note = Notes()
+            note.content = request.POST['note_content']
+            note.author = request.user
+            note.fk_problem = Problem.objects.filter(id=problem_id)[0]
+            note.save()
+        return HttpResponse("保存成功")
 
 
 @method_decorator(login_required, name="dispatch")
@@ -52,8 +86,13 @@ class ProblemDetail(View):
         :return:
         """
         problem = Problem.objects.filter(id=kwargs["problem_id"])[0]
+        note = Notes.objects.filter(fk_problem_id=kwargs["problem_id"], author_id=request.user.id).first()
+
         context = {
-            "problem_content": problem
+            "problem_content": problem,
+            "note": note,
+            "like_count": Problem.get_liked_conut(kwargs["problem_id"]),
+            "collect_count": Problem.get_collect_count(kwargs["problem_id"])
         }
         return render(request=request, template_name="judger_problem/templates/problem_detail.html", context=context)
 
@@ -112,3 +151,7 @@ class ProblemDetail(View):
             submit_status.user_code_status = "错误"
         submit_status.save()
         return render(request, template_name="judger_problem/templates/problem_detail.html", context=context)
+
+
+
+

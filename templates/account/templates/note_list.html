@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <table class="table table-striped">
+            <thead>
+            <tr>
+                <td>序号</td>
+                <td>题目</td>
+                <td>笔记内容</td>
+            </tr>
+            </thead>
+            <tbody>
+            {% for note in note_list %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ note.fk_problem.title }}</td>
+                    <td>{{ note.content }}</td>
+                    <td><a href="{% url 'problem:problemdetail' note.fk_problem_id %}">查看</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+{% endblock %}
+

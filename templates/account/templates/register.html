@@ -29,7 +29,9 @@
         function sendEmail() {
             email = document.getElementById("user_mail").value;
             {#console.log(email);#}
-            $.get("{% url 'account:SendEmail' %}", {"email": email})
+            $.get("{% url 'account:SendEmail' %}", {"email": email}, function (data, status) {
+                alert(data)
+            })
         };
     </script>
 {% endblock %}

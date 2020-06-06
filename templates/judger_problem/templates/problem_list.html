@@ -8,7 +8,8 @@
             <tr>
                 <td>序号</td>
                 <td>标题</td>
-                <td>作者</td>
+                <td>标签</td>
+{#                <td>作者</td>#}
                 <td>难度</td>
                 <td>题解数量</td>
                 <td>提交数量</td>
@@ -20,7 +21,8 @@
                 <tr>
                     <td>{{ forloop.counter }}</td>
                     <td><a href="{% url 'problem:problemdetail' proble_list.id %}">{{ proble_list.title }}</a></td>
-                    <td>{{ proble_list.fk_author.username }}</td>
+                    <td>{{ proble_list.fk_labels.first.name }}</td>
+{#                    <td>{{ proble_list.fk_author.username }}</td>#}
                     <td>{{ proble_list.get_difficulty_display }}</td>
                     <td>{{ proble_list.explains }}</td>
                     <td>{{ proble_list.Submits }}</td>
@@ -53,7 +55,11 @@
                         title:{
                           {#text: '做题统计' // 饼图的标题#}
                         },
+                        tooltip:{
+                            formatter: '{a} <br/>{b} : {c} ({d}%)'
+                        },
                         series: {
+                            name: '做题统计',
                             type: 'pie', // 图表是饼图
                             radius:'50%', // 饼图的半径
                             data: [
@@ -70,6 +76,10 @@
         <hr>
         <div>
             标签分类
+            <br>
+            {% for label in labels %}
+            <span class="label label-default"  style="display: inline-block;">{{ label.name }} {{ label.problem.count }}</span>
+            {% endfor %}
         </div>
     </div>
 

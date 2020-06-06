@@ -14,7 +14,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 
-from judger_problem.models import SubmitStatus
+from judger_problem.models import SubmitStatus, Notes
 
 
 class LoginView(View):
@@ -79,6 +79,7 @@ def sendEmailView(request):
             [request.GET['email']],
         )
         RegisterView.code4 = code4
+    return HttpResponse("验证码已发送至你的邮箱!")
 
 
 @login_required
@@ -94,6 +95,21 @@ def submit_status_list_view(request):
             "submit_list": submit_list
         }
         return render(request, template_name="account/templates/submit_list.html", context=context)
+
+
+@login_required
+def note_list(request):
+    """
+    展示用户笔记列表
+    :param request:
+    :return:
+    """
+    if request.method == "GET":
+        note_lists = Notes.objects.filter(author_id=request.user.id)
+        context = {
+            "note_list": note_lists,
+        }
+        return render(request, template_name="account/templates/note_list.html", context=context)
 
 
 @login_required
