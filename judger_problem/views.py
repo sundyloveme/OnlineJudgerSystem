@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 from django.shortcuts import HttpResponse
 
+
 from .models import Problem, SubmitStatus, ProblemLabel, Notes
 
 
@@ -151,7 +152,6 @@ class ProblemDetail(View):
             submit_status.user_code_status = "错误"
         submit_status.save()
         return render(request, template_name="judger_problem/templates/problem_detail.html", context=context)
-
 
 
 

@@ -13,8 +13,26 @@ from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
+from django.views.generic.list import ListView
 
 from judger_problem.models import SubmitStatus, Notes
+from account.models import ClassRecode
+
+
+class ClassRecodeView(View):
+    """
+    上课记录视图
+    """
+
+    def get(self, request, *args, **kwargs):
+        if "class_recode_id" in request.GET:
+            """如果存在class_recode_id查询参数，渲染讲师评语页面"""
+            context = {"class_recode": ClassRecode.objects.filter(id=request.GET['class_recode_id'])[0]}
+            return render(request, template_name="account/templates/comment_detail.html", context=context)
+        else:
+            """不存在class_recode_id查询参数，渲染上课记录列表"""
+            context = {'class_recode_list': ClassRecode.objects.filter(fk_user=self.request.user)}
+            return render(request, template_name="account/templates/class_recode_list.html", context=context)
 
 
 class LoginView(View):

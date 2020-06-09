@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <table class="table table-striped">
+            <thead>
+            <tr>
+                <td>序号</td>
+                <td>姓名</td>
+                <td>上课时间</td>
+                <td>上课状态</td>
+                <td>讲师</td>
+
+                <td>视频回放</td>
+                <td>点评和作业</td>
+            </tr>
+            </thead>
+            <tbody>
+            {% for recode in class_recode_list %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ user.last_name }}{{ user.first_name }}</td>
+                    <td>{{ recode.recode_time }}</td>
+                    <td>{{ recode.get_recode_states_display }}</td>
+                    <td>{{ recode.fk_teacher }}</td>
+
+                    <td><a href="{{ recode.recode_video }}">回放 </a>提取码:{{ recode.tiquma }}</td>
+                    <td><a href="{% url 'account:classrecode' %}?class_recode_id={{ recode.id }}">查看</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+{% endblock %}

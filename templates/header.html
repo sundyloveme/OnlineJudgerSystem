@@ -25,7 +25,7 @@
 			</li>
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    我的
+                    你好( {{ user.last_name }}{{ user.first_name }} )
                     <b class="caret"></b>
                 </a>
                 <ul class="dropdown-menu">
@@ -33,6 +33,7 @@
                     <li><a href="{% url 'account:show_user_notes' %}">我的笔记本</a></li>
                     <li><a href="{% url 'account:submit_record' %}">我的提交记录</a></li>
                     <li><a>我的题解</a></li>
+                    <li><a href="{% url 'account:classrecode' %}">上课记录</a></li>
                     <li><a href="{% url 'account:logout' %}">退出</a></li>
                 </ul>
             </li>
