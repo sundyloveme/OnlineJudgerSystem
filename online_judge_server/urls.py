@@ -15,8 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from judger_problem import views
 
 urlpatterns = [
+    path('', views.ProblemList.as_view()),
     path('admin/', admin.site.urls),
     path('problem/', include("judger_problem.urls", namespace="problem")),
     path('account/', include('account.urls', namespace="account")),

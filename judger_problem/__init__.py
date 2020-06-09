@@ -1,0 +1,1 @@
+default_app_config = 'judger_problem.apps.JudgerProblemConfig'
