@@ -22,7 +22,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'f2how(cqd74k53xclxf5g)zxjow(925!6vylcoxn50v=06w!a-'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+
+
+DEBUG = False if os.environ.get("DEBUG") == "develop" else True
+
 
 ALLOWED_HOSTS = ['*']
 
@@ -78,10 +81,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'online_judge_server_database',
-        'USER': 'root',
-        'PASSWORD': '123456',
+        'USER': os.environ.get("MYSQL_USER"),
+        'PASSWORD': os.environ.get("MYSQL_PASSWORD"),
         'HOST': 'localhost',
-        'PORT': '3307',
+        'PORT': os.environ.get("MYSQL_PROT"),
     }
 }
 
