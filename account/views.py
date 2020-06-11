@@ -14,11 +14,13 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.views.generic.list import ListView
+from django.utils.decorators import method_decorator
 
 from judger_problem.models import SubmitStatus, Notes
 from account.models import ClassRecode
 
 
+@method_decorator(login_required, name="dispatch")
 class ClassRecodeView(View):
     """
     上课记录视图
