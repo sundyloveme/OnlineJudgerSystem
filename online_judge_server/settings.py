@@ -80,7 +80,7 @@ DATABASES = {
         'NAME': 'online_judge_server_database',
         'USER': 'root',
         'PASSWORD': '123456',
-        'HOST': '127.0.0.1',
+        'HOST': 'localhost',
         'PORT': '3307',
     }
 }
