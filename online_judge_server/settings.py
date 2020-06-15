@@ -26,7 +26,6 @@ SECRET_KEY = 'f2how(cqd74k53xclxf5g)zxjow(925!6vylcoxn50v=06w!a-'
 
 DEBUG = False if os.environ.get("DEBUG") == "develop" else True
 
-
 ALLOWED_HOSTS = ['*']
 
 # Application definition
@@ -77,6 +76,7 @@ WSGI_APPLICATION = 'online_judge_server.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -87,6 +87,12 @@ DATABASES = {
         'PORT': os.environ.get("MYSQL_PROT"),
     }
 }
+
+# 测试数据库用sqlite
+import sys
+if 'test' in sys.argv or 'test_coverage' in sys.argv:  # Covers regular testing and django-coverage
+    DATABASES['default']['ENGINE'] = 'django.db.backends.sqlite3'
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators

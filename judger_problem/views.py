@@ -9,7 +9,6 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 from django.shortcuts import HttpResponse
 
-
 from .models import Problem, SubmitStatus, ProblemLabel, Notes
 
 
@@ -97,6 +96,42 @@ class ProblemDetail(View):
         }
         return render(request=request, template_name="judger_problem/templates/problem_detail.html", context=context)
 
+    def get_user_outputs(self, user_code, test_case_inputs, url):
+        """
+        获取用户代码的运行结果
+        :param user_code: 用户代码
+        :param test_case_inputs: 输入测试用例列表
+        :param url: 判题服务器地址
+        :return: 如果代码运行错误，返回字符串"error"; 如果代码可以运行，返回代码运行结果输出列表。
+        """
+        # 用户代码运行输出结果列表
+        user_test_case_outputs = []
+        data = {
+            "user_code": user_code.encode("utf-8"),
+            "user_input": "",
+        }
+        for case_input in test_case_inputs:
+            if case_input != "":
+                data['user_input'] = case_input
+                result = requests.post(url, data=data)
+                result = json.loads(result.text)
+                if result["status"] == "error":
+                    return "error"
+                user_test_case_outputs.append(result["output"])
+        return user_test_case_outputs
+
+    def is_correct_user_code(self, user_test_case_outputs, test_case_outputs):
+        """
+        判断用户输出结果是否正确
+        :param user_test_case_outputs:
+        :param test_case_outputs:
+        :return: 正确返回True, 否则返回Flase
+        """
+        for i in range(0, len(user_test_case_outputs)):
+            if user_test_case_outputs[i].replace("\n", "") != test_case_outputs[i]:
+                return False
+        return True
+
     def post(self, request, *args, **kwargs):
         """
         处理代码提交请求
@@ -113,14 +148,10 @@ class ProblemDetail(View):
             "mess": "",
         }
 
-        # 将用户代码和输入数据打包成data
-        # 向判题服务器发起post请求
-        # 将判题服务器结果转为json格式
+        # 向判题服务器发起post请求 运行代码
         user_code = request.POST['user_code']
-        data = {
-            "user_code": user_code,
-            "user_input": problem.problem_input,
-        }
+        test_case_input_list = problem.problem_test_case_input.split("///")
+        result = self.get_user_outputs(user_code, test_case_input_list, "http://120.92.173.80:8080/")
 
         # 设置提交状态
         submit_status = SubmitStatus()
@@ -128,13 +159,8 @@ class ProblemDetail(View):
         submit_status.user_code_content = user_code
         submit_status.author = request.user
 
-        # TODO ip地址应该写进环境变量中
-        result = requests.post("http://120.92.173.80:8080/", data=data)
-        # result = str(result, "utf-8")
-        result = json.loads(result.text)
-
         # 用户代码不可以运行
-        if result["status"] == "error":
+        if result == "error":
             context["status"] = "error"
             context["mess"] = "代码无法运行"
             submit_status.user_code_status = "代码无法运行"
@@ -142,7 +168,10 @@ class ProblemDetail(View):
             return render(request, template_name="judger_problem/templates/problem_detail.html", context=context)
 
         # 用户代码可运行，检测答案是否正确
-        if problem.problem_output == result["output"]:
+        test_case_outputs = problem.problem_test_case_output.replace('\r\n', '')  # 去除测试用例输出的多余的换行
+        test_case_outputs = test_case_outputs.split("///")  # 测试用例输出转为列表 eg:[1, 2, 3]
+        is_correct = self.is_correct_user_code(result, test_case_outputs)
+        if is_correct:
             context["status"] = "success"
             context["mess"] = "答案正确"
             submit_status.user_code_status = "正确"
@@ -152,6 +181,3 @@ class ProblemDetail(View):
             submit_status.user_code_status = "错误"
         submit_status.save()
         return render(request, template_name="judger_problem/templates/problem_detail.html", context=context)
-
-
-

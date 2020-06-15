@@ -25,14 +25,18 @@ class Problem(models.Model):
 
     @classmethod
     def get_problem_list(cls):
+        """
+        相当于 select 部分字段 from Problem
+        :return: 查询结果
+        """
         return cls.objects.all().only("title", "fk_author", "difficulty", "explains", "Submits",
                                       "corrects")
 
     @classmethod
     def get_liked_conut(cls, id):
         """
-        获取题目为id的被点赞数量
-        :return:
+        获取id为id的题目的点赞数量
+        :return: 点赞数量
         """
         return cls.objects.get(id=id).fk_liked_user.count()
 
@@ -54,16 +58,20 @@ class Problem(models.Model):
     problem_content = models.TextField(verbose_name="题目内容")
     problem_input = models.CharField(max_length=128, verbose_name="样例输入")
     problem_output = models.CharField(max_length=128, verbose_name="样例输出")
+    problem_test_case_input = models.TextField(default="", verbose_name="输入测试用例")
+    problem_test_case_output = models.TextField(default="", verbose_name="输出测试用例")
+    problem_std_code = models.TextField(blank=True, default="", verbose_name="标准代码")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建题目时间")
-    difficulty = models.IntegerField(null=True, choices=diff, verbose_name="难度")
-    explains = models.IntegerField(default=0, verbose_name="题目题解数量")
-    fk_labels = models.ManyToManyField(to=ProblemLabel, related_name="problem", verbose_name="题目标签")
-    Submits = models.IntegerField(default=0, verbose_name="总的用户提交次数")
-    corrects = models.IntegerField(default=0, verbose_name="总的用户正确次数")
-    # TODO 这里不需要联机删除，但是没有on_delete参数不行
-    fk_author = models.ForeignKey(to=User, on_delete=models.CASCADE, verbose_name="作者")
-    fk_liked_user = models.ManyToManyField(to=User, related_name="liked_user", verbose_name="点赞的用户")
-    fk_collect_user = models.ManyToManyField(to=User, related_name="collect_user", verbose_name="收藏的用户")
+    difficulty = models.IntegerField(null=True, blank=True, choices=diff, verbose_name="难度")
+    explains = models.IntegerField(default=0, blank=True, verbose_name="题目题解数量")
+    fk_labels = models.ManyToManyField(to=ProblemLabel, blank=True, related_name="problem", verbose_name="题目标签")
+    Submits = models.IntegerField(default=0, blank=True, verbose_name="总的用户提交次数")
+    corrects = models.IntegerField(default=0, blank=True, verbose_name="总的用户正确次数")
+    fk_author = models.ForeignKey(to=User, null=True, on_delete=models.SET_NULL, verbose_name="作者")
+    fk_liked_user = models.ManyToManyField(
+        to=User, blank=True, related_name="liked_user", verbose_name="点赞的用户")
+    fk_collect_user = models.ManyToManyField(
+        to=User, blank=True, related_name="collect_user", verbose_name="收藏的用户")
 
     class Meta:
         verbose_name = "题目列表"
@@ -78,7 +86,7 @@ class SubmitStatus(models.Model):
     判题状态的数据模型
     """
     fk_problem_id = models.ForeignKey(Problem, on_delete=models.CASCADE, verbose_name="外键题目id")
-    user_code_content = models.CharField(default="", max_length=128, verbose_name="用户代码")
+    user_code_content = models.CharField(default="", max_length=1024, verbose_name="用户代码")
     user_code_status = models.CharField(default="", max_length=56, verbose_name="提交状态")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="提交代码时间")
     author = models.ForeignKey(to=User, on_delete=models.CASCADE, verbose_name="作者")
@@ -86,6 +94,9 @@ class SubmitStatus(models.Model):
     class Meta:
         verbose_name_plural = "提交状态"
         verbose_name = "提交状态"
+
+    def __str__(self):
+        return "<{},{}>".format(self.fk_problem_id.title, self.user_code_status)
 
 
 class Notes(models.Model):
@@ -99,6 +110,3 @@ class Notes(models.Model):
 
     def __str__(self):
         return "笔记内容:{}".format(self.content)
-
-
-

@@ -30,8 +30,9 @@
         <br>
         <form method="post" action=".">
             {% csrf_token %}
-            <textarea name="user_code" class="md-textarea form-control" rows="10" placeholder="输入你的代码"
-                      required></textarea>
+            <textarea name="user_code" class="md-textarea form-control" rows="10" placeholder="输入你的代码, 仅限于使用C++代码" required></textarea>
+            <br>
+
             <br>
             <input type="submit" class="btn btn-info">
         </form>

@@ -15,6 +15,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.views.generic.list import ListView
 from django.utils.decorators import method_decorator
+import redis
 
 from judger_problem.models import SubmitStatus, Notes
 from account.models import ClassRecode
@@ -63,13 +64,21 @@ class RegisterView(View):
     用户注册的视图类
     """
 
-    code4 = None
-
     def get(self, request, *args, **kwargs):
         return render(request, template_name="account/templates/register.html", context={})
 
     def post(self, request, *args, **kwargs):
-        if request.POST['code4'] == self.code4:
+        if len(User.objects.filter(email=request.POST['user_mail'])) > 0:
+            return HttpResponse("您输入的邮箱已经注册")
+
+        if len(User.objects.filter(username=request.POST['user_name'])) > 0:
+            return HttpResponse("您输入的昵称已经注册")
+
+        if len(request.POST['code4']) < 4:
+            return HttpResponse("请输入验证码")
+
+        # 用户输入的四位验证码和redis数据库中的四位验证码
+        if request.POST['code4'] == connet_redis().get(request.POST['user_mail']).decode("utf-8"):
             username = request.POST['user_name']
             useremail = request.POST['user_mail']
             password = request.POST['user_password1']
@@ -79,14 +88,25 @@ class RegisterView(View):
             user = User.objects.create_user(username=username, email=useremail, password=password)
             user.save()
             return HttpResponseRedirect(reverse('account:login'))
+        else:
+            return HttpResponse("您输入的验证码有误")
+
+
+def connet_redis():
+    r = redis.StrictRedis(host="localhost", port=6379, db=0)
+    return r
 
 
 def sendEmailView(request):
     """
     发送邮件视图
-    :param request:
+    :param request:request.GET['email']用户邮箱
     :return:
     """
+
+    if len(User.objects.filter(email=request.GET['email'])) > 0:
+        return HttpResponse("您输入的邮箱已经注册")
+
     # 生成四位验证码
     num = functools.partial(random.randint, a=0, b=9)
     code4 = str(num()) + str(num()) + str(num()) + str(num())
@@ -98,7 +118,11 @@ def sendEmailView(request):
             os.environ.get("EMAIL_HOST_USER"),
             [request.GET['email']],
         )
-        RegisterView.code4 = code4
+
+    # 四位验证码存入redis数据库
+    # 如 key=xxx@mail.com, value="1234"
+    r = connet_redis()
+    r.set(request.GET['email'], code4)
     return HttpResponse("验证码已发送至你的邮箱!")
 
 
