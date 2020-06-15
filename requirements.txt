@@ -11,6 +11,7 @@ Pillow==7.1.2
 prettytable==0.7.2
 PyMySQL==0.9.3
 pytz==2020.1
+redis==3.5.3
 requests==2.23.0
 simplejson==3.17.0
 sqlparse==0.3.1
