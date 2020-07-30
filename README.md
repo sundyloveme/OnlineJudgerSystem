@@ -21,7 +21,7 @@ mysql数据库放入了docker中
 - 服务器端拉起镜像，运行部署脚本`run_docker_image_oneline_judge_web.sh`
 
 ## 目录
-```shell script
+```
 .
 ├── Dockerfile
 ├── README.md
@@ -35,5 +35,22 @@ mysql数据库放入了docker中
 ├── run_docker_image_oneline_judge_web.sh # 运行镜像的脚本
 ├── templates
 └── venv
-
 ```
+
+## 部署服务器架构
+查看架构列表
+```shell script
+ubuntu@vm10-0-2-2:~$ sudo docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}"
+CONTAINER ID        NAMES                 PORTS
+70241ca842ac        online_judger_web     
+de9f779102de        redis-test            0.0.0.0:6379->6379/tcp
+76c430d07a50        docker-mysql-server   33060/tcp, 0.0.0.0:3307->3306/tcp
+1bf37f1d6a03        judger_server         0.0.0.0:8080->8080/tcp
+```
+`online_judger_web` 网站服务主体
+
+`redis-test` redis服务器 主要负责存储**验证码**
+
+`docker-mysql-server` mysql服务器
+
+`judger_server` mysql服务器
