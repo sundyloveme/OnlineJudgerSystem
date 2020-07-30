@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from judger_problem.models import Problem
 
+from mdeditor.fields import MDTextField
+
 
 class UserInfo(models.Model):
     """
@@ -11,7 +13,8 @@ class UserInfo(models.Model):
     info = models.TextField(verbose_name="用户个人简介")
     motto = models.CharField(max_length=128, verbose_name="用户个性签名")
     photo = models.ImageField(verbose_name="用户照片")
-    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="User表外键")
+    user = models.OneToOneField(User, on_delete=models.CASCADE,
+                                verbose_name="User表外键")
 
     class Meta:
         verbose_name = "用户信息"
@@ -29,16 +32,46 @@ class ClassRecode(models.Model):
     ]
 
     fk_user = models.ForeignKey(to=User,
-                                on_delete=models.SET_NULL, null=True, related_name="user_recode", verbose_name="用户名")
-    create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建上课记录时间")
+                                on_delete=models.SET_NULL,
+                                null=True,
+                                related_name="user_recode",
+                                verbose_name="用户名")
+
+    create_time = models.DateTimeField(auto_now_add=True,
+                                       verbose_name="创建上课记录时间")
+
     recode_time = models.DateTimeField(verbose_name="排的上课时间")
-    recode_states = models.IntegerField(choices=states, default=0, verbose_name="上课记录的状态")
-    recode_video = models.CharField(blank=True, max_length=128, verbose_name="上课视频地址")
-    recode_enter = models.CharField(blank=True, max_length=128, verbose_name="上课入口地址")
-    fk_homework = models.ManyToManyField(blank=True, to=Problem, related_name="homework_recode", verbose_name="作业题目")
-    fk_teacher = models.ForeignKey(to=User, null=True,on_delete=models.SET_NULL, verbose_name="上课讲师")
-    comment = models.TextField(default="", blank=True, verbose_name="讲师点评")
-    tiquma = models.CharField(max_length=128, default="", blank=True, verbose_name="视频提取码")
+
+    recode_states = models.IntegerField(choices=states,
+                                        default=0,
+                                        verbose_name="上课记录的状态")
+
+    recode_video = models.CharField(blank=True,
+                                    max_length=128,
+                                    verbose_name="上课视频地址")
+
+    recode_enter = models.CharField(blank=True,
+                                    max_length=128,
+                                    verbose_name="上课入口地址")
+
+    fk_homework = models.ManyToManyField(blank=True,
+                                         to=Problem,
+                                         related_name="homework_recode",
+                                         verbose_name="作业题目")
+
+    fk_teacher = models.ForeignKey(to=User,
+                                   null=True,
+                                   on_delete=models.SET_NULL,
+                                   verbose_name="上课讲师")
+    # comment = models.TextField(default="", blank=True, verbose_name="讲师点评")
+    comment = MDTextField(default="",
+                          blank=True,
+                          verbose_name="讲师点评")
+
+    tiquma = models.CharField(max_length=128,
+                              default="",
+                              blank=True,
+                              verbose_name="视频提取码")
 
     class Meta:
         verbose_name = "上课记录"

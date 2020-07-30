@@ -22,4 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('problem/', include("judger_problem.urls", namespace="problem")),
     path('account/', include('account.urls', namespace="account")),
+    path('mdeditor/', include('mdeditor.urls')),
 ]

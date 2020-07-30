@@ -39,3 +39,6 @@ class AccountTest(TestCase):
             ("11@qq.com",),
         )
         self.assertEqual(result, 1, "发送邮件失败")
+
+    def test_class_record(self):
+        pass

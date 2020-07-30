@@ -3,7 +3,7 @@
 {% block content %}
     <div class="card">
         <div class="card-body">
-            {{ class_recode.comment }}
+            {{ comments|safe }}
         </div>
     </div>
 {% endblock %}

@@ -19,6 +19,8 @@ import redis
 
 from judger_problem.models import SubmitStatus, Notes
 from account.models import ClassRecode
+from mdeditor.fields import MDTextFormField
+import markdown2
 
 
 @method_decorator(login_required, name="dispatch")
@@ -30,17 +32,27 @@ class ClassRecodeView(View):
     def get(self, request, *args, **kwargs):
         if "class_recode_id" in request.GET:
             """如果存在class_recode_id查询参数，渲染讲师评语页面"""
-            context = {"class_recode": ClassRecode.objects.filter(id=request.GET['class_recode_id'])[0]}
-            return render(request, template_name="account/templates/comment_detail.html", context=context)
+            class_recode = \
+                ClassRecode.objects.filter(id=request.GET['class_recode_id'])[0]
+
+            comments = markdown2.markdown(class_recode.comment)
+            context = {"comments": comments}
+            return render(request,
+                          template_name="account/templates/comment_detail.html",
+                          context=context)
         else:
             """不存在class_recode_id查询参数，渲染上课记录列表"""
-            context = {'class_recode_list': ClassRecode.objects.filter(fk_user=self.request.user)}
-            return render(request, template_name="account/templates/class_recode_list.html", context=context)
+            context = {'class_recode_list': ClassRecode.objects.filter(
+                fk_user=self.request.user)}
+            return render(request,
+                          template_name="account/templates/class_recode_list.html",
+                          context=context)
 
 
 class LoginView(View):
     def get(self, request, *args, **kwargs):
-        return render(request, template_name="account/templates/login.html", context={})
+        return render(request, template_name="account/templates/login.html",
+                      context={})
 
     def post(self, request, *args, **kwargs):
         username = request.POST['user_name']
@@ -65,7 +77,8 @@ class RegisterView(View):
     """
 
     def get(self, request, *args, **kwargs):
-        return render(request, template_name="account/templates/register.html", context={})
+        return render(request, template_name="account/templates/register.html",
+                      context={})
 
     def post(self, request, *args, **kwargs):
         if len(User.objects.filter(email=request.POST['user_mail'])) > 0:
@@ -78,14 +91,16 @@ class RegisterView(View):
             return HttpResponse("请输入验证码")
 
         # 用户输入的四位验证码和redis数据库中的四位验证码
-        if request.POST['code4'] == connet_redis().get(request.POST['user_mail']).decode("utf-8"):
+        if request.POST['code4'] == connet_redis().get(
+                request.POST['user_mail']).decode("utf-8"):
             username = request.POST['user_name']
             useremail = request.POST['user_mail']
             password = request.POST['user_password1']
             password2 = request.POST['user_password2']
             if password2 != password:
                 return HttpResponse('错误：两次密码不一致')
-            user = User.objects.create_user(username=username, email=useremail, password=password)
+            user = User.objects.create_user(username=username, email=useremail,
+                                            password=password)
             user.save()
             return HttpResponseRedirect(reverse('account:login'))
         else:
@@ -138,7 +153,9 @@ def submit_status_list_view(request):
         context = {
             "submit_list": submit_list
         }
-        return render(request, template_name="account/templates/submit_list.html", context=context)
+        return render(request,
+                      template_name="account/templates/submit_list.html",
+                      context=context)
 
 
 @login_required
@@ -153,7 +170,8 @@ def note_list(request):
         context = {
             "note_list": note_lists,
         }
-        return render(request, template_name="account/templates/note_list.html", context=context)
+        return render(request, template_name="account/templates/note_list.html",
+                      context=context)
 
 
 @login_required
@@ -169,4 +187,6 @@ def show_user_submited_code(request):
         context = {
             "user_code": submit.user_code_content
         }
-        return render(request, template_name="account/templates/show_user_submited_code.html", context=context)
+        return render(request,
+                      template_name="account/templates/show_user_submited_code.html",
+                      context=context)

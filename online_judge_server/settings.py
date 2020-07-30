@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'account',
     'judger_problem',
+    'mdeditor',
 ]
 
 MIDDLEWARE = [
@@ -138,3 +139,7 @@ EMAIL_HOST = "smtp.163.com"
 EMAIL_PORT = "25"
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
+MEDIA_URL = '/media/'
