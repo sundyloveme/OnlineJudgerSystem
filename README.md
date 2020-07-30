@@ -14,6 +14,8 @@ mysql数据库放入了docker中
 
 - 运行测试代码 `python manage test`
 
+- `pip freeze > requirements.txt` 保存依赖环境
+
 - 本地写好代码推送到 [github仓库](https://github.com/sundyloveme/OnlineJudgerSystem)
 
 - 阿里云容器服务自动构建镜像
