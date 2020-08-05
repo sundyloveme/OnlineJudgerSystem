@@ -10,6 +10,7 @@ import requests
 from django.shortcuts import HttpResponse
 
 from .models import Problem, SubmitStatus, ProblemLabel, Notes
+import markdown2
 
 
 @method_decorator(login_required, name="dispatch")
@@ -30,13 +31,15 @@ class ProblemList(View):
         proble_list_all = Problem.get_problem_list()
 
         # 已解决题目数量
-        solve_count = len(SubmitStatus.objects.filter(user_code_status="正确", author=request.user))
+        solve_count = len(SubmitStatus.objects.filter(user_code_status="正确",
+                                                      author=request.user))
         # 未解决题目数量
         problem_count = Problem.objects.count() - solve_count
 
         # 分页
         pagetor = Paginator(proble_list_all, 10)
-        page = request.GET.get('page') if request.GET.get('page') is not None else 1
+        page = request.GET.get('page') if request.GET.get(
+            'page') is not None else 1
         proble_lists = pagetor.get_page(page)
 
         context = {
@@ -45,7 +48,9 @@ class ProblemList(View):
             "solve_count": solve_count,
             "labels": self.get_problem_label(),
         }
-        return render(request, template_name="judger_problem/templates/problem_list.html", context=context)
+        return render(request,
+                      template_name="judger_problem/templates/problem_list.html",
+                      context=context)
 
 
 @login_required
@@ -58,7 +63,8 @@ def saveNote(request, problem_id):
     :return:
     """
     if request.method == "POST":
-        note = Notes.objects.filter(fk_problem_id=problem_id, author_id=request.user.id)
+        note = Notes.objects.filter(fk_problem_id=problem_id,
+                                    author_id=request.user.id)
         if len(note) != 0:
             note[0].content = request.POST['note_content']
             note[0].save()
@@ -86,15 +92,22 @@ class ProblemDetail(View):
         :return:
         """
         problem = Problem.objects.filter(id=kwargs["problem_id"])[0]
-        note = Notes.objects.filter(fk_problem_id=kwargs["problem_id"], author_id=request.user.id).first()
+        note = Notes.objects.filter(fk_problem_id=kwargs["problem_id"],
+                                    author_id=request.user.id).first()
+
+        # markdown格式转为html格式
+        problem_describes = markdown2.markdown(problem.problem_content)
 
         context = {
+            "problem_describes": problem_describes,  # 题目描述
             "problem_content": problem,
             "note": note,
             "like_count": Problem.get_liked_conut(kwargs["problem_id"]),
             "collect_count": Problem.get_collect_count(kwargs["problem_id"])
         }
-        return render(request=request, template_name="judger_problem/templates/problem_detail.html", context=context)
+        return render(request=request,
+                      template_name="judger_problem/templates/problem_detail.html",
+                      context=context)
 
     def get_user_outputs(self, user_code, test_case_inputs, url):
         """
@@ -128,7 +141,8 @@ class ProblemDetail(View):
         :return: 正确返回True, 否则返回Flase
         """
         for i in range(0, len(user_test_case_outputs)):
-            if user_test_case_outputs[i].replace("\n", "") != test_case_outputs[i]:
+            if user_test_case_outputs[i].replace("\n", "") != test_case_outputs[
+                i]:
                 return False
         return True
 
@@ -151,7 +165,8 @@ class ProblemDetail(View):
         # 向判题服务器发起post请求 运行代码
         user_code = request.POST['user_code']
         test_case_input_list = problem.problem_test_case_input.split("///")
-        result = self.get_user_outputs(user_code, test_case_input_list, "http://120.92.173.80:8080/")
+        result = self.get_user_outputs(user_code, test_case_input_list,
+                                       "http://120.92.173.80:8080/")
 
         # 设置提交状态
         submit_status = SubmitStatus()
@@ -165,11 +180,15 @@ class ProblemDetail(View):
             context["mess"] = "代码无法运行"
             submit_status.user_code_status = "代码无法运行"
             submit_status.save()
-            return render(request, template_name="judger_problem/templates/problem_detail.html", context=context)
+            return render(request,
+                          template_name="judger_problem/templates/problem_detail.html",
+                          context=context)
 
         # 用户代码可运行，检测答案是否正确
-        test_case_outputs = problem.problem_test_case_output.replace('\r\n', '')  # 去除测试用例输出的多余的换行
-        test_case_outputs = test_case_outputs.split("///")  # 测试用例输出转为列表 eg:[1, 2, 3]
+        test_case_outputs = problem.problem_test_case_output.replace('\r\n',
+                                                                     '')  # 去除测试用例输出的多余的换行
+        test_case_outputs = test_case_outputs.split(
+            "///")  # 测试用例输出转为列表 eg:[1, 2, 3]
         is_correct = self.is_correct_user_code(result, test_case_outputs)
         if is_correct:
             context["status"] = "success"
@@ -180,4 +199,6 @@ class ProblemDetail(View):
             context["mess"] = "答案错误，请检查你的代码逻辑"
             submit_status.user_code_status = "错误"
         submit_status.save()
-        return render(request, template_name="judger_problem/templates/problem_detail.html", context=context)
+        return render(request,
+                      template_name="judger_problem/templates/problem_detail.html",
+                      context=context)

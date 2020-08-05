@@ -63,7 +63,7 @@ class ClassRecode(models.Model):
                                    null=True,
                                    on_delete=models.SET_NULL,
                                    verbose_name="上课讲师")
-    # comment = models.TextField(default="", blank=True, verbose_name="讲师点评")
+
     comment = MDTextField(default="",
                           blank=True,
                           verbose_name="讲师点评")
