@@ -10,7 +10,23 @@ import requests
 from django.shortcuts import HttpResponse
 
 from .models import Problem, SubmitStatus, ProblemLabel, Notes
-import markdown2
+
+
+def search_problem_view(request):
+    proble_list_all = Problem.get_sth_problem_list(request.POST['keyword'])
+
+    # 分页
+    pagetor = Paginator(proble_list_all, 10)
+    page = request.GET.get('page') if request.GET.get(
+        'page') is not None else 1
+    proble_lists = pagetor.get_page(page)
+
+    context = {
+        "proble_lists": proble_lists,
+    }
+    return render(request,
+                  template_name="judger_problem/templates/problem_list.html",
+                  context=context)
 
 
 @method_decorator(login_required, name="dispatch")
@@ -96,10 +112,10 @@ class ProblemDetail(View):
                                     author_id=request.user.id).first()
 
         # markdown格式转为html格式
-        problem_describes = markdown2.markdown(problem.problem_content)
+        # problem_describes = markdown2.markdown(problem.problem_content)
 
         context = {
-            "problem_describes": problem_describes,  # 题目描述
+            # "problem_describes": problem_describes,  # 题目描述
             "problem_content": problem,
             "note": note,
             "like_count": Problem.get_liked_conut(kwargs["problem_id"]),
@@ -157,6 +173,8 @@ class ProblemDetail(View):
 
         # 获取model对象problem
         problem = Problem.objects.filter(id=kwargs["problem_id"])[0]
+        problem.Submits += 1
+        problem.save()
         context = {
             "problem_content": problem,
             "mess": "",
@@ -194,6 +212,8 @@ class ProblemDetail(View):
             context["status"] = "success"
             context["mess"] = "答案正确"
             submit_status.user_code_status = "正确"
+            problem.corrects += 1
+            problem.save()
         else:
             context["status"] = "success"
             context["mess"] = "答案错误，请检查你的代码逻辑"

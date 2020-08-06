@@ -8,7 +8,19 @@
 			<li><a href="#">探索</a></li>
 			<li><a href="{% url 'problem:problemList' %}">题库</a></li>
             <li><a href="#">竞赛</a></li>
+            <li>
+                <form class="form-inline my-2 my-lg-0" role="search" method="POST" action="{% url 'problem:search' %}" target="_blank">
+                    {% csrf_token %}
+                    <div class="input-group">
+                    <input type="text" class="form-control" name="keyword" placeholder="题目搜索">
+                    <span class="input-group-btn">
+                    <button type="submit" class="btn btn-default">搜索</button>
+                    </span>
+                    </div><!-- /input-group -->
+                </form>
+            </li>
 		</ul>
+
         {#% 登陆成功 %#}
         {% if user.is_authenticated %}
         <ul class='nav navbar-nav navbar-right'>
@@ -25,7 +37,7 @@
 			</li>
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    你好( {{ user.last_name }}{{ user.first_name }} )
+                    你好( {{ user.username }} )
                     <b class="caret"></b>
                 </a>
                 <ul class="dropdown-menu">

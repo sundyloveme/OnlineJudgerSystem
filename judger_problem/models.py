@@ -28,6 +28,10 @@ class Problem(models.Model):
     """
 
     @classmethod
+    def get_sth_problem_list(cls, key_word):
+        return cls.objects.filter(title__contains=key_word)
+
+    @classmethod
     def get_problem_list(cls):
         """
         相当于 select 部分字段 from Problem

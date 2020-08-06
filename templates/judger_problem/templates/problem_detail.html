@@ -78,8 +78,8 @@
                             type: 'pie', // 图表是饼图
                             radius:'50%', // 饼图的半径
                             data: [
-                                {name: "未解决", value: 12},
-                                {name: '已解决', value: 100},
+                                {name: "未解决", value: {{ problem_content.Submits }} - {{ problem_content.corrects }} },
+                                {name: '已解决', value: {{ problem_content.corrects }}},
                             ]
                         }
                     });
