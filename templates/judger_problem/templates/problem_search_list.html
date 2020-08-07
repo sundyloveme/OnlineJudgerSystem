@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="col-md-9">
+
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <td>序号</td>
+                <td>标题</td>
+                <td>标签</td>
+{#                <td>作者</td>#}
+                <td>难度</td>
+                <td>题解数量</td>
+                <td>提交数量</td>
+                <td>正确数量</td>
+            </tr>
+            </thead>
+            <tbody>
+            {% for proble_list in proble_lists %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><a href="{% url 'problem:problemdetail' proble_list.id %}">{{ proble_list.title }}</a></td>
+                    <td>{{ proble_list.fk_labels.first.name }}</td>
+{#                    <td>{{ proble_list.fk_author.username }}</td>#}
+                    <td>{{ proble_list.get_difficulty_display }}</td>
+                    <td>{{ proble_list.explains }}</td>
+                    <td>{{ proble_list.Submits }}</td>
+                    <td>{{ proble_list.corrects }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    <div>
+        <ul class="pager">
+            {% if proble_lists.has_previous %}
+                <li class="previous"><a href="?page={{ proble_lists.previous_page_number }}">&larr; 上一页</a></li>
+            {% endif %}
+            <li class="">第{{ proble_lists.number }}页</li>
+            {% if proble_lists.has_next %}
+                <li class="next"><a href="?page={{ proble_lists.next_page_number }}">下一页 &rarr;</a></li>
+            {% endif%}
+        </ul>
+    </div>
+    </div>
+
+
+{% endblock %}

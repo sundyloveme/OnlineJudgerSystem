@@ -25,7 +25,7 @@ def search_problem_view(request):
         "proble_lists": proble_lists,
     }
     return render(request,
-                  template_name="judger_problem/templates/problem_list.html",
+                  template_name="judger_problem/templates/problem_search_list.html",
                   context=context)
 
 
