@@ -14,22 +14,20 @@
     {% endif %}
 
     <div class="col-md-8">
-
-
         <h2>{{ problem_content.title }}</h2>
-        <a class="glyphicon glyphicon-thumbs-up" href="#">{{ like_count }}点赞</a>
-        <a style="margin-left: 30px" class="glyphicon glyphicon-star" href="#">{{ collect_count }}收藏</a>
+{#        <a class="glyphicon glyphicon-thumbs-up" href="#">{{ like_count }}点赞</a>#}
+{#        <a style="margin-left: 30px" class="glyphicon glyphicon-star" href="#">{{ collect_count }}收藏</a>#}
 
-        <h3>题目描述</h3>
-        {{ problem_content.problem_content }}
-        <h3>输入格式</h3>
-        {{ problem_content.problem_input_style }}
-        <h3>输出格式</h3>
-        {{ problem_content.problem_output_style }}
-        <h3>输入样例</h3>
-        {{ problem_content.problem_input }}
-        <h3>输出样例</h3>
-        {{ problem_content.problem_output }}
+{#        <h3>题目描述</h3>#}
+        {{ problem_describes|safe }}
+{#        <h3>输入格式</h3>#}
+{#        {{ problem_content.problem_input_style }}#}
+{#        <h3>输出格式</h3>#}
+{#        {{ problem_content.problem_output_style }}#}
+{#        <h3>输入样例</h3>#}
+{#        {{ problem_content.problem_input }}#}
+{#        <h3>输出样例</h3>#}
+{#        {{ problem_content.problem_output }}#}
         <br>
         <br>
         <form method="post" action=".">

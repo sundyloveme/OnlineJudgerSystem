@@ -66,16 +66,16 @@ class Problem(models.Model):
     title = models.CharField(max_length=128, verbose_name="题目标题")
     # problem_content = models.TextField(verbose_name="题目内容")
     problem_content = MDTextField(verbose_name="题目内容")
-    problem_input = models.TextField(verbose_name="样例输入")
-    problem_output = models.TextField(verbose_name="样例输出")
+    problem_input = models.TextField(blank=True, verbose_name="样例输入")
+    problem_output = models.TextField(blank=True, verbose_name="样例输出")
     problem_test_case_input = models.TextField(default="",
                                                verbose_name="输入测试用例",
                                                help_text="以'///'分割多个数据")
     problem_test_case_output = models.TextField(default="",
                                                 verbose_name="输出测试用例",
                                                 help_text="以'///'分割多个数据")
-    problem_input_style = models.TextField(default="", verbose_name="输入格式")
-    problem_output_style = models.TextField(default="", verbose_name="输出格式")
+    problem_input_style = models.TextField(default="", blank=True, verbose_name="输入格式")
+    problem_output_style = models.TextField(default="", blank=True, verbose_name="输出格式")
     problem_std_code = models.TextField(blank=True, default="",
                                         verbose_name="标准代码")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建题目时间")

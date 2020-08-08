@@ -10,6 +10,7 @@ import requests
 from django.shortcuts import HttpResponse
 
 from .models import Problem, SubmitStatus, ProblemLabel, Notes
+import markdown2
 
 
 def search_problem_view(request):
@@ -58,7 +59,11 @@ class ProblemList(View):
             'page') is not None else 1
         proble_lists = pagetor.get_page(page)
 
+
+        right_prolems = request.user.userinfo.right_problems.all()
+
         context = {
+            "right_prolems": right_prolems,
             "proble_lists": proble_lists,
             "problem_count": problem_count,
             "solve_count": solve_count,
@@ -112,10 +117,10 @@ class ProblemDetail(View):
                                     author_id=request.user.id).first()
 
         # markdown格式转为html格式
-        # problem_describes = markdown2.markdown(problem.problem_content)
+        problem_describes = markdown2.markdown(problem.problem_content)
 
         context = {
-            # "problem_describes": problem_describes,  # 题目描述
+            "problem_describes": problem_describes,  # 题目描述
             "problem_content": problem,
             "note": note,
             "like_count": Problem.get_liked_conut(kwargs["problem_id"]),
