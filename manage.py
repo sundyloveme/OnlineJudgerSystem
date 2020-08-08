@@ -5,6 +5,7 @@ import sys
 
 
 def main():
+    # 默认环境配置文件为`production` 即`部署`环境配置文件
     os.environ.setdefault('DJANGO_SETTINGS_MODULE',
                           'online_judge_server.settings.production')
     try:
