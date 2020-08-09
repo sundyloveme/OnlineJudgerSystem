@@ -18,7 +18,7 @@ from django.utils.decorators import method_decorator
 import redis
 
 from judger_problem.models import SubmitStatus, Notes
-from account.models import ClassRecode
+from account.models import ClassRecode, UserInfo
 from mdeditor.fields import MDTextFormField
 import markdown2
 
@@ -101,6 +101,7 @@ class RegisterView(View):
                 return HttpResponse('错误：两次密码不一致')
             user = User.objects.create_user(username=username, email=useremail,
                                             password=password)
+            UserInfo(user=user).save()
             user.save()
             return HttpResponseRedirect(reverse('account:login'))
         else:

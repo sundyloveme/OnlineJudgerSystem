@@ -56,3 +56,8 @@ de9f779102de        redis-test            0.0.0.0:6379->6379/tcp
 `docker-mysql-server` mysql服务器
 
 `judger_server` mysql服务器
+
+## 其他命令
+用开发环境重新配置数据库
+`python manage.py makemigrations --settings online_judge_server.settings.dev`
+`python manage.py migrate --settings online_judge_server.settings.dev`

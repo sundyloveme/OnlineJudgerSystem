@@ -2,6 +2,8 @@ from django.test import TestCase
 from django.core.mail import send_mail
 import os
 import redis
+from django.contrib.auth.models import User
+from account.models import UserInfo
 
 
 # Create your tests here.
@@ -42,3 +44,16 @@ class AccountTest(TestCase):
 
     def test_class_record(self):
         pass
+
+    def test_user_problem_info(self):
+        """
+
+        :return:
+        """
+        john = User.objects.create_user("john", "john@ex.com", "123")
+        john.save()
+        # john.user_right
+        UserInfo(user=john).save()
+        john.user_info
+        # self.assertEqual(john.user_recode, )
+        # self.assertEqual(, )

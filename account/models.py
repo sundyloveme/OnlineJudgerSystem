@@ -14,7 +14,8 @@ class UserInfo(models.Model):
     info = models.TextField(verbose_name="用户个人简介")
     motto = models.CharField(max_length=128, verbose_name="用户个性签名")
     photo = models.ImageField(verbose_name="用户照片")
-    user = models.OneToOneField(User, on_delete=models.CASCADE,
+    user = models.OneToOneField(to=User, related_name="user_info",
+                                on_delete=models.CASCADE,
                                 verbose_name="User表外键")
     right_problems = models.ManyToManyField(to=Problem, verbose_name="正确题目列表")
 

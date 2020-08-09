@@ -13,11 +13,10 @@ sudo docker run -itd --network host --name online_judger_web --env-file online_j
         registry.cn-shanghai.aliyuncs.com/sundy-allstar/online_judger_system:0.2
 
 echo "在新容器内重构数据库"
-sudo docker exec -it online_judger_web python manage.py makemigrations
 sudo docker exec  -it online_judger_web python manage.py migrate
 
 echo "运行单元测试"
-docker exec  -it online_judger_web python manage.py test
+sudo docker exec  -it online_judger_web python manage.py test
 
 echo "运行服务器"
-docker exec  -it online_judger_web python manage.py runserver 0.0.0.0:8383
+sudo docker exec  -it online_judger_web python manage.py runserver 0.0.0.0:8383

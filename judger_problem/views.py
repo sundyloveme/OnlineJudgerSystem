@@ -59,8 +59,14 @@ class ProblemList(View):
             'page') is not None else 1
         proble_lists = pagetor.get_page(page)
 
+        try:
+            right_prolems = request.user.userinfo.right_problems.all()
+        except:
+            right_prolems = [None]
+        # TODO 题目作对后 User.正确题数＋1
 
-        right_prolems = request.user.userinfo.right_problems.all()
+
+
 
         context = {
             "right_prolems": right_prolems,
