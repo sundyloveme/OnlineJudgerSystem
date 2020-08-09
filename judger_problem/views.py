@@ -60,13 +60,9 @@ class ProblemList(View):
         proble_lists = pagetor.get_page(page)
 
         try:
-            right_prolems = request.user.userinfo.right_problems.all()
+            right_prolems = request.user.user_info.right_problems.all()
         except:
             right_prolems = [None]
-        # TODO 题目作对后 User.正确题数＋1
-
-
-
 
         context = {
             "right_prolems": right_prolems,
@@ -224,6 +220,11 @@ class ProblemDetail(View):
             context["mess"] = "答案正确"
             submit_status.user_code_status = "正确"
             problem.corrects += 1
+
+            # 题目正确后添加入用户信息中的 "正确题目" 列表
+            request.user.user_info.right_problems.add(problem)
+            request.user.user_info.save()
+
             problem.save()
         else:
             context["status"] = "success"
