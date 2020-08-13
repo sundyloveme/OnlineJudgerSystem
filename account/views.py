@@ -22,6 +22,8 @@ from account.models import ClassRecode, UserInfo
 from mdeditor.fields import MDTextFormField
 import markdown2
 
+from django.contrib.auth.models import AnonymousUser
+
 
 @method_decorator(login_required, name="dispatch")
 class ClassRecodeView(View):
@@ -35,7 +37,7 @@ class ClassRecodeView(View):
             class_recode = \
                 ClassRecode.objects.filter(id=request.GET['class_recode_id'])[0]
 
-            comments = markdown2.markdown(class_recode.comment)
+            comments = class_recode.comment
             context = {"comments": comments}
             return render(request,
                           template_name="account/templates/comment_detail.html",
@@ -50,9 +52,17 @@ class ClassRecodeView(View):
 
 
 class LoginView(View):
+    """
+    登陆页面视图
+    """
     def get(self, request, *args, **kwargs):
-        return render(request, template_name="account/templates/login.html",
-                      context={})
+        if request.user == AnonymousUser():
+            # 匿名用户展示登陆页面
+            return render(request, template_name="account/templates/login.html",
+                          context={})
+        else:
+            # 已登录用户不展示登陆页面
+            return HttpResponseRedirect(reverse('problem:problemList'))
 
     def post(self, request, *args, **kwargs):
         username = request.POST['user_name']
