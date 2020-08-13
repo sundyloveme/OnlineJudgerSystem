@@ -25,7 +25,7 @@ SECRET_KEY = 'f2how(cqd74k53xclxf5g)zxjow(925!6vylcoxn50v=06w!a-'
 # SECURITY WARNING: don't run with debug turned on in production!
 
 
-DEBUG = False if os.environ.get("DEBUG") == "develop" else True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -119,7 +119,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'zh-hans'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
@@ -145,6 +145,3 @@ EMAIL_HOST = "smtp.163.com"
 EMAIL_PORT = "25"
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
-
-MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
-MEDIA_URL = '/media/'

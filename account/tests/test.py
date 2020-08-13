@@ -4,14 +4,8 @@ import os
 import redis
 from django.contrib.auth.models import User
 from account.models import UserInfo
+from django.urls import reverse
 
-
-# Create your tests here.
-# 测试能否发送验证码 存入redis
-
-# 输入错误验证码
-
-# 成功注册
 
 class AccountTest(TestCase):
     @staticmethod
@@ -22,7 +16,6 @@ class AccountTest(TestCase):
     def test_get_code4(self):
         """
         测试获取注册用的验证码
-        :return:
         """
         response = self.client.get('/account/sendemail/?email=11@qq.com')
         code4 = self.connet_redis().get("11@qq.com")
@@ -32,7 +25,6 @@ class AccountTest(TestCase):
     def test_send_mail(self):
         """
         测试发送邮件功能
-        :return:
         """
         result = send_mail(
             '来自李扣在线评测系统的邮件',
@@ -42,18 +34,38 @@ class AccountTest(TestCase):
         )
         self.assertEqual(result, 1, "发送邮件失败")
 
+    def save_auth(self):
+        """
+        创建一个用户
+        """
+        user = User.objects.create_user("sundy", "sundy@qq.com", "123")
+        user.save()
+
+    def login(self):
+        """
+        登陆
+        """
+        self.client.post(reverse('account:login'),
+                         {'user_name': 'sundy', 'user_password1': '123'},
+                         follow=True)
+
     def test_class_record(self):
-        pass
-
-    def test_user_problem_info(self):
         """
-
-        :return:
+        测试查看：
+            上课记录页面
+            用户笔记页面
+            提交代码的页面
         """
-        john = User.objects.create_user("john", "john@ex.com", "123")
-        john.save()
-        # john.user_right
-        UserInfo(user=john).save()
-        john.user_info
-        # self.assertEqual(john.user_recode, )
-        # self.assertEqual(, )
+        self.save_auth()
+        self.login()
+        response = self.client.get(reverse('account:classrecode'))
+        self.assertEqual(response.status_code, 200, "上课记录页面有误")
+
+        response = self.client.get(reverse('account:show_user_notes'))
+        self.assertEqual(response.status_code, 200, "查看用户笔记页面有误")
+
+        response = self.client.get(reverse('account:submit_record'))
+        self.assertEqual(response.status_code, 200, "查看用户提交的代码列表页面有误")
+
+
+

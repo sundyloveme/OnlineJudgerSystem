@@ -16,7 +16,7 @@ echo "在新容器内重构数据库"
 sudo docker exec  -it online_judger_web python manage.py migrate
 
 echo "运行单元测试"
-sudo docker exec  -it online_judger_web python manage.py test
+sudo docker exec  -it online_judger_web python manage.py test --settings online_judge_server.settings.dev
 
 echo "运行服务器"
 sudo docker exec  -it online_judger_web python manage.py runserver 0.0.0.0:8383
