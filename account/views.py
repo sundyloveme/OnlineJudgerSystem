@@ -19,8 +19,7 @@ import redis
 
 from judger_problem.models import SubmitStatus, Notes
 from account.models import ClassRecode, UserInfo
-from mdeditor.fields import MDTextFormField
-import markdown2
+from online_judge_server.settings.base import connet_redis
 
 from django.contrib.auth.models import AnonymousUser
 
@@ -44,8 +43,12 @@ class ClassRecodeView(View):
                           context=context)
         else:
             """不存在class_recode_id查询参数，渲染上课记录列表"""
-            context = {'class_recode_list': ClassRecode.objects.filter(
-                fk_user=self.request.user)}
+            if request.user.is_staff:
+                """如果是管理员登陆则显示所有人员上课记录"""
+                context = {'class_recode_list': ClassRecode.objects.all()}
+            else:
+                context = {'class_recode_list': ClassRecode.objects.filter(
+                    fk_user=self.request.user)}
             return render(request,
                           template_name="account/templates/class_recode_list.html",
                           context=context)
@@ -55,6 +58,7 @@ class LoginView(View):
     """
     登陆页面视图
     """
+
     def get(self, request, *args, **kwargs):
         if request.user == AnonymousUser():
             # 匿名用户展示登陆页面
@@ -118,9 +122,6 @@ class RegisterView(View):
             return HttpResponse("您输入的验证码有误")
 
 
-def connet_redis():
-    r = redis.StrictRedis(host="localhost", port=6379, db=0)
-    return r
 
 
 def sendEmailView(request):

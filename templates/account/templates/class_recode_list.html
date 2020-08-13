@@ -10,7 +10,7 @@
                 <td>上课状态</td>
                 <td>讲师</td>
 
-                <td>视频回放</td>
+{#                <td>视频回放</td>#}
                 <td>点评和作业</td>
             </tr>
             </thead>
@@ -23,7 +23,7 @@
                     <td>{{ recode.get_recode_states_display }}</td>
                     <td>{{ recode.fk_teacher }}</td>
 
-                    <td><a href="{{ recode.recode_video }}">回放 </a>提取码:{{ recode.tiquma }}</td>
+{#                    <td><a href="{{ recode.recode_video }}">回放 </a>提取码:{{ recode.tiquma }}</td>#}
                     <td><a href="{% url 'account:classrecode' %}?class_recode_id={{ recode.id }}">查看</a></td>
                 </tr>
             {% endfor %}
