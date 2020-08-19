@@ -138,6 +138,8 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
+
+
 SIMPLEUI_HOME_INFO = False
 
 # 发送邮件配置
