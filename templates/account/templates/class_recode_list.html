@@ -18,7 +18,7 @@
             {% for recode in class_recode_list %}
                 <tr>
                     <td>{{ forloop.counter }}</td>
-                    <td>{{ user.last_name }}{{ user.first_name }}</td>
+                    <td>{{ recode.fk_user.last_name }}{{ recode.fk_user.first_name }}</td>
                     <td>{{ recode.recode_time }}</td>
                     <td>{{ recode.get_recode_states_display }}</td>
                     <td>{{ recode.fk_teacher }}</td>
