@@ -24,11 +24,16 @@ class ProblemLabel(models.Model):
 
 class Problem(models.Model):
     """
-    作业题目的数据模型
+    题目的数据模型
     """
 
     @classmethod
     def get_sth_problem_list(cls, key_word):
+        """
+        搜索题目
+        :param key_word: 关键字
+        :return: 搜索结果
+        """
         return cls.objects.filter(title__contains=key_word)
 
     @classmethod
@@ -74,8 +79,10 @@ class Problem(models.Model):
     problem_test_case_output = models.TextField(default="",
                                                 verbose_name="输出测试用例",
                                                 help_text="以'///'分割多个数据")
-    problem_input_style = models.TextField(default="", blank=True, verbose_name="输入格式")
-    problem_output_style = models.TextField(default="", blank=True, verbose_name="输出格式")
+    problem_input_style = models.TextField(default="", blank=True,
+                                           verbose_name="输入格式")
+    problem_output_style = models.TextField(default="", blank=True,
+                                            verbose_name="输出格式")
     problem_std_code = models.TextField(blank=True, default="",
                                         verbose_name="标准代码")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建题目时间")
@@ -108,14 +115,24 @@ class SubmitStatus(models.Model):
     """
     判题状态的数据模型
     """
-    fk_problem_id = models.ForeignKey(Problem, on_delete=models.CASCADE,
+    fk_problem_id = models.ForeignKey(Problem,
+                                      on_delete=models.CASCADE,
                                       verbose_name="外键题目id")
-    user_code_content = models.CharField(default="", max_length=1024,
+
+    user_code_content = models.CharField(default="",
+                                         max_length=1024,
                                          verbose_name="用户代码")
-    user_code_status = models.CharField(default="", max_length=56,
+
+    user_code_status = models.CharField(default="",
+                                        max_length=56,
                                         verbose_name="提交状态")
-    create_time = models.DateTimeField(auto_now_add=True, verbose_name="提交代码时间")
-    author = models.ForeignKey(to=User, on_delete=models.CASCADE,
+
+    create_time = models.DateTimeField(auto_now_add=True,
+                                       verbose_name="提交代码时间")
+
+    author = models.ForeignKey(to=User,
+                               on_delete=models.CASCADE,
+                               related_name="submit_status",
                                verbose_name="作者")
 
     class Meta:

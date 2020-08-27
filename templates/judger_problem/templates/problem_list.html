@@ -23,7 +23,7 @@
                     <td>{{ forloop.counter }}</td>
                     <td>
                         <a href="{% url 'problem:problemdetail' proble_list.id %}">{{ proble_list.title }}</a>
-                        {% if proble_list in right_prolems %}
+                        {% if proble_list.id in right_prolems %}
                             <span style="color: #008000"
                                   class="glyphicon glyphicon-ok"></span>
                         {% endif %}
@@ -74,7 +74,7 @@
                         type: 'pie', // 图表是饼图
                         radius: '50%', // 饼图的半径
                         data: [
-                            {name: "未解决", value: {{ problem_count }}},
+                            {name: "未解决", value: {{ unsolve_count }}},
                             {name: '已解决', value: {{ solve_count }}},
                         ]
                     }
@@ -82,7 +82,7 @@
             </script>
             <small>已解决:<b>{{ solve_count }}</b></small>
             <br>
-            <small>未解决:<b>{{ problem_count }}</b></small>
+            <small>未解决:<b>{{ unsolve_count }}</b></small>
         </div>
         <hr>
         <div>

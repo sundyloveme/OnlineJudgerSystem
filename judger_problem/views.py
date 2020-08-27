@@ -33,41 +33,66 @@ def search_problem_view(request):
 @method_decorator(login_required, name="dispatch")
 class ProblemList(View):
     """
-    题目列表视图
+    首页视图
     """
+
+    proble_list_all = Problem.get_problem_list()
+
+    def get_problem_count(self):
+        """
+        获取题目总数
+        :return: 题目总数
+        """
+        try:
+            return self.proble_list_all.count()
+        except Exception as e:
+            print("返回题目总数出错", e)
+            return None
+
+    def get_user_correct_problems_id(self, user):
+        """
+        用户正确题目id集合
+        :param user: 被查询用户对象
+        :return: user对象的正确题目的id集合 eg:{1, 3}
+        """
+        try:
+            query = user.submit_status.filter(user_code_status='正确')
+        except Exception as e:
+            print("查询用户正确题目出错", e)
+            return None
+        query = set([q.fk_problem_id_id for q in query])
+        return query
 
     def get_problem_label(self):
         """
         获得题目标签
-        :return:
+        :return: 返回所有题目标签
         """
         labels = ProblemLabel.objects.all()
         return labels
 
     def get(self, request):
-        proble_list_all = Problem.get_problem_list()
+        """处理get请求"""
 
         # 已解决题目数量
-        solve_count = len(SubmitStatus.objects.filter(user_code_status="正确",
-                                                      author=request.user))
+        solve_count = self.get_user_correct_problems_id(request.user).__len__()
+
         # 未解决题目数量
-        problem_count = Problem.objects.count() - solve_count
+        unsolve_count = self.get_problem_count() - solve_count
 
-        # 分页
-        pagetor = Paginator(proble_list_all, 10)
-        page = request.GET.get('page') if request.GET.get(
-            'page') is not None else 1
+        # user对象的正确题目的id集合
+        right_prolems = self.get_user_correct_problems_id(request.user)
+        right_prolems = list(right_prolems)
+
+        # 分页 每页10条
+        pagetor = Paginator(Problem.objects.all().order_by('id'), 10)
+        page = request.GET.get('page', 1)
         proble_lists = pagetor.get_page(page)
-
-        try:
-            right_prolems = request.user.user_info.right_problems.all()
-        except:
-            right_prolems = [None]
 
         context = {
             "right_prolems": right_prolems,
             "proble_lists": proble_lists,
-            "problem_count": problem_count,
+            "unsolve_count": unsolve_count,
             "solve_count": solve_count,
             "labels": self.get_problem_label(),
         }
