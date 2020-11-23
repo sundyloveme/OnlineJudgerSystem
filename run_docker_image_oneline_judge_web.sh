@@ -12,7 +12,7 @@ echo "运行新的容器"
 sudo docker run -itd --network host --name online_judger_web --env-file online_judge_web_env \
         registry.cn-shanghai.aliyuncs.com/sundy-allstar/online_judger_system:0.2
 
-echo "在新容器内重构数据库"
+echo "在新容器内重构数据库结构"
 sudo docker exec  -it online_judger_web python manage.py migrate
 
 echo "运行单元测试"

@@ -13,4 +13,9 @@ urlpatterns = [
          name="show_user_submited_code"),
     path("show-user-notes/", views.note_list, name="show_user_notes"),
     path("classrecode/", views.ClassRecodeView.as_view(), name="classrecode"),
+    path("check-email/", views.check_email_repeat),
+    path("check-nick-name/", views.check_nick_name_repeat),
+    path("get_captcha/", views.get_captcha),
+    path("check_captcha/", views.check_captcha),
+
 ]

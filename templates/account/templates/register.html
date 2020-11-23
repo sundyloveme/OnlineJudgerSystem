@@ -7,8 +7,8 @@
             <div class="form-group">
                 {#    <label for="exampleInputEmail1">电子邮箱</label>#}
                 <input type="email" class="form-control" id="user_mail" name="user_mail" placeholder="Email" required>
-                <input type="text" class="form-control" id="" name="code4" placeholder="验证码" required>
-                <button class="btn btn-info" onclick="sendEmail()">发送验证码</button>
+{#                <input type="text" class="form-control" id="" name="code4" placeholder="验证码" required>#}
+{#                <button class="btn btn-info" onclick="sendEmail()">发送验证码</button>#}
             </div>
             <div class="form-group">
                 {#    <label for="username">昵称</label>#}
@@ -21,6 +21,12 @@
             <div class="form-group">
                 {#    <label for="exampleInputPassword1">重复密码</label>#}
                 <input type="password" class="form-control" id="" name="user_password2" placeholder="再次输入密码" required>
+            </div>
+
+            <div class="form-group">
+                {#    <label for="exampleInputPassword1">重复密码</label>#}
+                <input type="text" class="form-control" id="" name="captcha_code" placeholder="验证码"  required>
+                <img style="height: 10px; width: 50px;" src="https://ss0.bdstatic.com/94oJfD_bAAcT8t7mm9GUKT-xh_/timg?image&quality=100&size=b4000_4000&sec=1606125930&di=315e647069f6269ff710d438296426b1&src=http://img.aiimg.com/uploads/userup/0909/2Z64022L38.jpg">
             </div>
             <button type="submit" class="btn btn-primary">注册</button>
         </form>

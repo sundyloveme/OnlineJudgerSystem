@@ -1,6 +1,7 @@
 import random
 import functools
 import os
+import re
 
 from django.shortcuts import render
 from django.views import View
@@ -9,17 +10,19 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.contrib.auth import login
 from django.contrib.auth import logout
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.views.generic.list import ListView
 from django.utils.decorators import method_decorator
 import redis
+from django_redis import get_redis_connection
 
 from judger_problem.models import SubmitStatus, Notes
 from account.models import ClassRecode, UserInfo
 from online_judge_server.settings.base import connet_redis
+from lib.captcha.captcha import captcha
 
 from django.contrib.auth.models import AnonymousUser
 
@@ -85,6 +88,109 @@ def logoutView(request):
         return HttpResponseRedirect(reverse('problem:problemList'))
 
 
+def check_email_repeat(request):
+    """
+    检测邮箱是否重复的接口
+    :param request:
+    :return:
+    """
+    if not request.method == 'POST':
+        return HttpResponse("请使用post方式访问")
+    else:
+        if request.POST.get('email') == None:
+            return HttpResponse("参数不齐")
+
+        user_email = request.POST.get('email')
+
+        if not re.match(
+                "^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$",
+                user_email):
+            return JsonResponse({"show": 'true', "msg": "邮箱格式不合符规范"})
+
+        if len(User.objects.filter(email=user_email)) > 0:
+            return JsonResponse({"show": 'true', "msg": "该邮箱已注册"})
+
+        return JsonResponse({"show": 'false', "msg": ""})
+
+
+def check_nick_name_repeat(request):
+    """
+    检测昵称是否重复
+    :param request:
+    :return:
+    """
+    if not request.method == 'POST':
+        return HttpResponse("请使用post方式访问")
+    else:
+        if request.POST.get('nick_name') == None:
+            return HttpResponse("参数不齐")
+
+        nick_name = request.POST.get('nick_name')
+
+        if not re.match("^[a-zA-Z0-9_\u4e00-\u9fa5]+$", nick_name):
+            return JsonResponse({"show": 'true', "msg": "用户名不符合规范"})
+
+        if len(User.objects.filter(username=nick_name)) > 0:
+            return JsonResponse({"show": 'true', "msg": "该用户名已注册"})
+
+        return JsonResponse({"show": 'false', "msg": ""})
+
+
+def get_captcha(request):
+    """
+    获取验证码接口
+    get方式提供uuid 验证码和uuid绑定
+    :param request:
+    :return:
+    """
+    if not request.method == 'GET':
+        return HttpResponse("请使用get方式访问")
+    else:
+        if request.GET.get('uuid') == None:
+            return HttpResponse("参数不齐")
+        uuid = request.GET.get('uuid')
+
+        try:
+            text, image = captcha.generate_captcha()
+        except Exception as e:
+            print("生成图形验证码失败 {}".format(e))
+
+        try:
+            redis_conn = get_redis_connection('verify_captcha')
+        except Exception as e:
+            print("连接redis数据库失败 {}".format(e))
+
+        redis_conn.setex("image_uuid:{}".format(uuid), 60 * 5,
+                         text)  # 验证码保存在redis中三分钟
+        print("image_uuid:{} = {}".format(uuid, text))
+        return HttpResponse(content_type='image/jpg', content=image)
+
+
+def check_captcha(request):
+    """
+    验证码是否正确接口
+    get方式提供 uuid和验证码
+    :param request:
+    :return:
+    """
+    if request.method == "GET":
+        uuid = request.GET.get('uuid')
+        captcha_code = request.GET.get('captcha_code')
+        if not all([uuid, captcha_code]):
+            return HttpResponse("参数不齐全")
+
+        try:
+            redis_conn = get_redis_connection('verify_captcha')
+        except Exception as e:
+            print("redis连接异常 {}".format(e))
+        correct_code = redis_conn.get("image_uuid:{}".format(uuid))
+        print("correct_code is {}".format(correct_code))
+        if correct_code.decode().lower() == captcha_code.lower():
+            return JsonResponse({"show": "false", "msg": ""})
+        else:
+            return JsonResponse({"show": "true", "msg": "验证码错误"})
+
+
 class RegisterView(View):
     """
     用户注册的视图类
@@ -120,8 +226,6 @@ class RegisterView(View):
             return HttpResponseRedirect(reverse('account:login'))
         else:
             return HttpResponse("您输入的验证码有误")
-
-
 
 
 def sendEmailView(request):
