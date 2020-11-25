@@ -201,6 +201,17 @@ class RegisterView(View):
                       context={})
 
     def post(self, request, *args, **kwargs):
+        """
+        参数齐全
+        邮件重复检测
+        昵称重复检测
+        验证码检测
+        密码两次一样检测
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
         if len(User.objects.filter(email=request.POST['user_mail'])) > 0:
             return HttpResponse("您输入的邮箱已经注册")
 

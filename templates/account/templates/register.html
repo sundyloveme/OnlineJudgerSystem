@@ -1,44 +1,152 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div class="col-md-4">
-        <form method="post" action=".">
+    <div class="col-md-4" xmlns:v-bind="http://www.w3.org/1999/xhtml">
+        <form method="post" action="." id="app">
             {% csrf_token %}
             <div class="form-group">
                 {#    <label for="exampleInputEmail1">电子邮箱</label>#}
-                <input type="email" class="form-control" id="user_mail" name="user_mail" placeholder="Email" required>
+                <input type="email" class="form-control" id="user_mail" name="user_mail" placeholder="Email" required v-model="email" @blur="check_email">
+                <span>[[ email_error ]]</span>
 {#                <input type="text" class="form-control" id="" name="code4" placeholder="验证码" required>#}
 {#                <button class="btn btn-info" onclick="sendEmail()">发送验证码</button>#}
             </div>
             <div class="form-group">
                 {#    <label for="username">昵称</label>#}
-                <input type="text" class="form-control" id="username" name="user_name" placeholder="昵称" required>
+                <input type="text" class="form-control" id="username" name="user_name" placeholder="昵称" required v-model="nick_name" @blur="check_nick_name">
+                <span> [[ nick_name_error ]] </span>
             </div>
             <div class="form-group">
                 {#    <label for="exampleInputPassword1">密码</label>#}
-                <input type="password" class="form-control" id="" name="user_password1" placeholder="密码" required>
+                <input type="password" class="form-control" id="" name="user_password1" placeholder="密码" required v-model="user_password1">
             </div>
             <div class="form-group">
                 {#    <label for="exampleInputPassword1">重复密码</label>#}
-                <input type="password" class="form-control" id="" name="user_password2" placeholder="再次输入密码" required>
+                <input type="password" class="form-control" id="" name="user_password2" placeholder="再次输入密码" required v-model="user_password2">
             </div>
 
             <div class="form-group">
                 {#    <label for="exampleInputPassword1">重复密码</label>#}
-                <input type="text" class="form-control" id="" name="captcha_code" placeholder="验证码"  required>
-                <img style="height: 10px; width: 50px;" src="https://ss0.bdstatic.com/94oJfD_bAAcT8t7mm9GUKT-xh_/timg?image&quality=100&size=b4000_4000&sec=1606125930&di=315e647069f6269ff710d438296426b1&src=http://img.aiimg.com/uploads/userup/0909/2Z64022L38.jpg">
+                <input type="text" class="form-control" id="" name="captcha_code" placeholder="验证码"  required v-model="user_captcha" @blur="check_user_captcha">
+                <span>[[ user_captcha_error ]]</span>
+                <br>
+                <img style="" v-bind:src="captcha_url" @click="get_captcha">
             </div>
-            <button type="submit" class="btn btn-primary">注册</button>
+            <button type="submit" class="btn btn-primary" @click="check_value_all">注册</button>
+            <span>[[ check_value_all_error ]]</span>
         </form>
     </div>
-    <script>
-        function sendEmail() {
-            email = document.getElementById("user_mail").value;
+{#    <script>#}
+{#        function sendEmail() {#}
+{#            email = document.getElementById("user_mail").value;#}
             {#console.log(email);#}
-            $.get("{% url 'account:SendEmail' %}", {"email": email}, function (data, status) {
-                alert(data)
-            })
-        };
+{#            $.get("{% url 'account:SendEmail' %}", {"email": email}, function (data, status) {#}
+{#                alert(data)#}
+{#            })#}
+{#        };#}
+{#    </script>#}
+    <script>
+        // 随机生成uuid算法
+        function uuid() {
+            var s = [];
+            var hexDigits = "0123456789abcdef";
+            for (var i = 0; i < 36; i++) {
+                s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+            }
+            s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
+            s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
+            s[8] = s[13] = s[18] = s[23] = "-";
+
+            var uuid = s.join("");
+            return uuid;
+        }
+
+        // 刷新生成新的uuid
+        var global_uuid = uuid()
+
+        // 全局url -> 服务器主机地址
+        var global_url = 'http://127.0.0.1:8000/'
+
+        var app = new Vue({
+            el : "#app",
+            delimiters: ['[[', ']]'],
+            data : {
+                email: "",
+                email_error: "",
+
+                user_password1: "",
+                user_password2: "",
+
+                captcha_url : global_url + 'account/get_captcha/?uuid=' + global_uuid,
+
+                nick_name : "",
+                nick_name_error: "",
+
+                user_captcha: "",
+                user_captcha_error: "",
+
+                check_value_all_error: "",
+            },
+            methods : {
+                check_email: function () {
+                    var formData = new FormData();
+                    formData.append('email', this.email);
+                    axios({
+                        method: 'post',
+                        url : global_url + 'account/check-email/',
+                        data: formData,
+                        headers : ''}).then(function (response) {
+
+                            {#this.email_error = response.data.msg;#}
+                            app.$data.email_error = response.data.msg
+                            console.log(response.data.msg);
+                    });
+                },
+                get_captcha: function () {
+                    global_uuid = uuid();
+                    this.captcha_url = global_url + 'account/get_captcha/?uuid=' + global_uuid;
+                },
+
+                check_nick_name : function () {
+                    var formData = new FormData();
+                    formData.append('nick_name', this.nick_name);
+                    axios({
+                        method: "post",
+                        url: global_url + 'account/check-nick-name/',
+                        data: formData,
+                    }).then(function (response) {
+                        app.$data.nick_name_error = response.data.msg;
+                        console.log(response.data);
+                    });
+                },
+
+                check_user_captcha: function () {
+                    // 检测验证码是否正确
+                    //var formData = new FormData();
+                    //formData.append('uuid', global_uuid);
+                    //formData.append('captcha_code', this.user_captcha);
+
+                    axios({
+                       method: 'get',
+                       url : global_url + 'account/check_captcha/?uuid=' + global_uuid + "&captcha_code=" + this.user_captcha,
+                    }).then(function (response) {
+                        app.$data.user_captcha_error = response.data.msg;
+                        console.log(response.data);
+                    });
+                },
+
+                check_value_all: function () {
+                    if (this.email=="" && this.nick_name=="" && this.user_password1=="" && this.user_password2=="" && this.user_captcha){
+                        app.$data.check_value_all_error = "请全部填写";
+                    }
+
+                },
+
+
+            },
+
+
+        });
     </script>
 {% endblock %}
 
