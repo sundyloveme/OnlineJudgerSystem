@@ -202,41 +202,63 @@ class RegisterView(View):
 
     def post(self, request, *args, **kwargs):
         """
-        参数齐全
-        邮件重复检测
-        昵称重复检测
-        验证码检测
-        密码两次一样检测
         :param request:
         :param args:
         :param kwargs:
         :return:
         """
-        if len(User.objects.filter(email=request.POST['user_mail'])) > 0:
-            return HttpResponse("您输入的邮箱已经注册")
 
-        if len(User.objects.filter(username=request.POST['user_name'])) > 0:
-            return HttpResponse("您输入的昵称已经注册")
+        user_mail = request.POST['user_mail']
+        user_name = request.POST['user_name']
+        user_password1 = request.POST['user_password1']
+        user_password2 = request.POST['user_password2']
+        captcha = request.POST['captcha']
+        uuid = request.POST['uuid']
 
-        if len(request.POST['code4']) < 4:
-            return HttpResponse("请输入验证码")
+        # 参数齐全检测
+        if not all(
+                [user_mail, user_name, user_password1, user_password2, captcha,
+                 uuid]):
+            return JsonResponse({"show": "true", "msg": "请正确填写"})
 
-        # 用户输入的四位验证码和redis数据库中的四位验证码
-        if request.POST['code4'] == connet_redis().get(
-                request.POST['user_mail']).decode("utf-8"):
-            username = request.POST['user_name']
-            useremail = request.POST['user_mail']
-            password = request.POST['user_password1']
-            password2 = request.POST['user_password2']
-            if password2 != password:
-                return HttpResponse('错误：两次密码不一致')
-            user = User.objects.create_user(username=username, email=useremail,
-                                            password=password)
-            UserInfo(user=user).save()
-            user.save()
-            return HttpResponseRedirect(reverse('account:login'))
-        else:
-            return HttpResponse("您输入的验证码有误")
+        # 邮箱重复检测
+        if not re.match(
+                "^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$",
+                user_mail):
+            return JsonResponse({"show": 'true', "msg": "邮箱格式不合符规范"})
+        if len(User.objects.filter(email=user_mail)) > 0:
+            return JsonResponse({"show": 'true', "msg": "该邮箱已注册"})
+
+        # 用户名重复检测
+        if not re.match("^[a-zA-Z0-9_\u4e00-\u9fa5]+$", user_name):
+            return JsonResponse({"show": 'true', "msg": "用户名不符合规范"})
+        if len(User.objects.filter(username=user_name)) > 0:
+            return JsonResponse({"show": 'true', "msg": "该用户名已注册"})
+
+        # 验证码检测
+        if len(captcha) != 4:
+            return JsonResponse({"show": 'true', "msg": "验证码错误"})
+        try:
+            redis_conn = get_redis_connection("verify_captcha")
+        except Exception as e:
+            print("连接redis出错{}".format(e))
+        correct_code = redis_conn.get("image_uuid:{}".format(uuid))
+        if correct_code == None:
+            return JsonResponse({"show": 'true', "msg": "验证码错误"})
+        print("correct_code is {}".format(correct_code))
+        if correct_code.decode().lower() != captcha.lower():
+            return JsonResponse({"show": "true", "msg": "验证码错误"})
+
+        # 密码两次一样检测
+        if user_password1 != user_password2:
+            return JsonResponse({"show": "true", "msg": "两次密码不一样"})
+
+        # 保存用户信息
+        user = User.objects.create_user(username=user_name, email=user_mail,
+                                        password=user_password1)
+        UserInfo(user=user).save()
+        login(request, user)
+        return HttpResponseRedirect(reverse('problem:problemList'))
 
 
 def sendEmailView(request):
