@@ -57,6 +57,51 @@ class ClassRecodeView(View):
                           context=context)
 
 
+def check_password_correct(request):
+    """
+    检测用户名和密码是否正确
+    :param request:
+    :return:
+    """
+
+    username = request.POST.get('user_name')
+    password = request.POST.get('user_password1')
+    captcha = request.POST.get('captcha')
+    uuid = request.POST.get('uuid')
+
+    if not all([username, password, captcha, uuid]):
+        return JsonResponse({"show": "true", "msg": "信息不全"})
+
+    # 检测验证码是否正确
+    try:
+        redis_conn = get_redis_connection('verify_captcha')
+    except Exception as e:
+        print("连接redis失败{}".format(e))
+        return HttpResponse(status=500)
+    correct_captcha = redis_conn.get("image_uuid:{}".format(uuid))
+    if (correct_captcha is None) or \
+            (correct_captcha.decode().lower() != captcha.lower()):
+        # print("correct captcha is {}".format(correct_captcha.decode()))
+        return JsonResponse({"show": "true", "msg": "验证码错误"})
+
+    # 检测用户名和密码
+    if re.match("^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$",
+                username):
+        # 邮箱登陆
+        user = User.objects.filter(email=username)
+        if len(user) <= 0:
+            return JsonResponse({"show": "true", "msg": "用户名或者密码错误"})
+        if user[0].check_password(password) != True:
+            return JsonResponse({"show": "true", "msg": "用户名或者密码错误"})
+    else:
+        # 用户名登陆
+        user = authenticate(username=username, password=password)
+        if user is None:
+            return JsonResponse({"show": "true", "msg": "用户名或者密码错误"})
+
+    return JsonResponse({"show": "false", "msg": ""})
+
+
 class LoginView(View):
     """
     登陆页面视图

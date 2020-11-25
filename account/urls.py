@@ -17,5 +17,6 @@ urlpatterns = [
     path("check-nick-name/", views.check_nick_name_repeat),
     path("get_captcha/", views.get_captcha),
     path("check_captcha/", views.check_captcha),
+    path("check_login/", views.check_password_correct),
 
 ]

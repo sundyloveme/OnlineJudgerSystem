@@ -4,23 +4,60 @@
     <div class="col-md-4">
 
 
-        <form method="post" action=".">
+        <form method="post" action="." id="app">
             {% csrf_token %}
             <div class="form-group">
-                {#    <label for="username">昵称</label>#}
-                <input type="text" class="form-control" id="username" name="user_name" placeholder="昵称" required>
+                <input type="text" class="form-control" id="username" name="user_name" placeholder="昵称或邮箱" required>
             </div>
 
 
             <div class="form-group">
-                {#    <label for="exampleInputPassword1">密码</label>#}
                 <input type="password" class="form-control" id="" name="user_password1" placeholder="密码" required>
+            </div>
+
+            <div class="form-group">
+                <input type="text" class="form-control" id="" name="captcha" placeholder="验证码" required>
+                <input style="display: none" name="uuid" v-model="uuid">
+                <br>
+                <img style="" v-bind:src="captcha_url" @click="get_captcha">
             </div>
 
 
             <button type="submit" class="btn btn-primary">登陆</button>
+            <br>
+            <span>[[ error_message ]]</span>
         </form>
     </div>
+    <script>
+        // 随机生成uuid算法
+        function uuid() {
+            var s = [];
+            var hexDigits = "0123456789abcdef";
+            for (var i = 0; i < 36; i++) {
+                s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+            }
+            s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
+            s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
+            s[8] = s[13] = s[18] = s[23] = "-";
+
+            var uuid = s.join("");
+            return uuid;
+        };
+
+        var global_url = 'http://127.0.0.1:8000/';
+        var global_uuid = uuid();
+
+        var app = new Vue({
+            el: "#app",
+            delimiters: ['[[', ']]'],
+            data:{
+                captcha_url : global_url + 'account/get_captcha/?uuid=' + global_uuid,
+            },
+
+
+
+        });
+    </script>
 
 
 {% endblock %}
