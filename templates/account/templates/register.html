@@ -27,12 +27,13 @@
 
             <div class="form-group">
                 {#    <label for="exampleInputPassword1">重复密码</label>#}
-                <input type="text" class="form-control" id="" name="captcha_code" placeholder="验证码"  required v-model="user_captcha" @blur="check_user_captcha">
+                <input type="text" class="form-control" id="" name="captcha" placeholder="验证码"  required v-model="user_captcha" @blur="check_user_captcha">
+                <input style="display: none" name="uuid" v-model="uuid">
                 <span>[[ user_captcha_error ]]</span>
                 <br>
                 <img style="" v-bind:src="captcha_url" @click="get_captcha">
             </div>
-            <button type="submit" class="btn btn-primary" @click="check_value_all">注册</button>
+            <button v-bind:type="button_type" class="btn btn-primary" @click="check_value_all">注册</button>
             <span>[[ check_value_all_error ]]</span>
         </form>
     </div>
@@ -78,6 +79,7 @@
                 user_password2: "",
 
                 captcha_url : global_url + 'account/get_captcha/?uuid=' + global_uuid,
+                uuid: global_uuid,
 
                 nick_name : "",
                 nick_name_error: "",
@@ -86,9 +88,12 @@
                 user_captcha_error: "",
 
                 check_value_all_error: "",
+
+                button_type: "",
             },
             methods : {
                 check_email: function () {
+                    // 检查邮箱重复
                     var formData = new FormData();
                     formData.append('email', this.email);
                     axios({
@@ -103,11 +108,13 @@
                     });
                 },
                 get_captcha: function () {
+                    // 获取验证码
                     global_uuid = uuid();
                     this.captcha_url = global_url + 'account/get_captcha/?uuid=' + global_uuid;
                 },
 
                 check_nick_name : function () {
+                    // 检测用户名是否重复
                     var formData = new FormData();
                     formData.append('nick_name', this.nick_name);
                     axios({
@@ -136,10 +143,21 @@
                 },
 
                 check_value_all: function () {
-                    if (this.email=="" && this.nick_name=="" && this.user_password1=="" && this.user_password2=="" && this.user_captcha){
-                        app.$data.check_value_all_error = "请全部填写";
-                    }
+                    // 检查参数是否正确
 
+                    // error信息如果存在 禁止表单提交
+                    if (this.email_error != ""
+                        || this.nick_name_error != ""
+                        || this.user_captcha_error != ""
+                        || (this.user_password1 != this.user_password2))
+                    {
+                        app.$data.check_value_all_error = "请检查你填写的信息";
+                        this.button_type = "button";
+                    }
+                    else{
+                        this.$data.uuid = global_uuid;
+                        this.button_type = "submit";
+                    }
                 },
 
 

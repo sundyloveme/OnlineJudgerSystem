@@ -208,12 +208,12 @@ class RegisterView(View):
         :return:
         """
 
-        user_mail = request.POST['user_mail']
-        user_name = request.POST['user_name']
-        user_password1 = request.POST['user_password1']
-        user_password2 = request.POST['user_password2']
-        captcha = request.POST['captcha']
-        uuid = request.POST['uuid']
+        user_mail = request.POST.get('user_mail')
+        user_name = request.POST.get('user_name')
+        user_password1 = request.POST.get('user_password1')
+        user_password2 = request.POST.get('user_password2')
+        captcha = request.POST.get('captcha')
+        uuid = request.POST.get('uuid')
 
         # 参数齐全检测
         if not all(
