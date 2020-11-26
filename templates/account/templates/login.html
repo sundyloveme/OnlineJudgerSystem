@@ -2,30 +2,28 @@
 
 {% block content %}
     <div class="col-md-4">
-
-
         <form method="post" action="." id="app">
             {% csrf_token %}
             <div class="form-group">
-                <input type="text" class="form-control" id="username" name="user_name" placeholder="昵称或邮箱" required>
-            </div>
-
-
-            <div class="form-group">
-                <input type="password" class="form-control" id="" name="user_password1" placeholder="密码" required>
+                <input type="text" class="form-control" id="username" name="user_name" placeholder="昵称或邮箱" required v-model="user_name">
             </div>
 
             <div class="form-group">
-                <input type="text" class="form-control" id="" name="captcha" placeholder="验证码" required>
-                <input style="display: none" name="uuid" v-model="uuid">
+                <input type="password" class="form-control" id="" name="user_password1" placeholder="密码" required v-model="user_password1">
+            </div>
+
+            <div class="form-group">
+                <input type="text" class="form-control" id="" name="captcha" placeholder="验证码" required v-model="captcha">
+                <span>[[ error_message ]]</span>
                 <br>
+                <input style="display: none" name="uuid" v-model="uuid">
                 <img style="" v-bind:src="captcha_url" @click="get_captcha">
+
             </div>
 
+            <button v-bind:type="button_type" class="btn btn-primary" @click="check_password" id="tijiao">登陆</button>
 
-            <button type="submit" class="btn btn-primary">登陆</button>
-            <br>
-            <span>[[ error_message ]]</span>
+
         </form>
     </div>
     <script>
@@ -52,6 +50,57 @@
             delimiters: ['[[', ']]'],
             data:{
                 captcha_url : global_url + 'account/get_captcha/?uuid=' + global_uuid,
+
+                user_name: "",
+                user_password1: "",
+                captcha: "",
+                uuid: "",
+
+                error_message: "",
+
+                button_type: "button",
+
+            },
+            methods:{
+                get_captcha: function (){
+                    // 获取图形验证码
+                    global_uuid = uuid();
+                    this.captcha_url = global_url + 'account/get_captcha/?uuid=' + global_uuid;
+                },
+
+                check_password: function () {
+                    // 检测用户信息是否正确
+                    var formData = new FormData();
+                    formData.append('user_name', this.user_name);
+                    formData.append('user_password1', this.user_password1);
+                    formData.append('captcha', this.captcha);
+                    formData.append('uuid', global_uuid);
+
+                    var form_forrbi;
+
+                    axios({
+                       method: 'post',
+                        url : global_url + 'account/check_login/',
+                        data: formData,
+                        headers : ''}).then(function (response) {
+                            app.$data.error_message = response.data.msg;
+
+                            console.log(response.data)
+
+                            if (response.data.show != "false")
+                            {
+                                console.log("禁用表单提交");
+                            }else if (response.data.show == "false"){
+                                console.log("允许表单提交");
+                                app.$data.button_type = "submit";
+                                app.$data.uuid = global_uuid;
+                                // document.getElementById('tijiao').click();
+                            }
+                    });
+
+
+                },
+
             },
 
 

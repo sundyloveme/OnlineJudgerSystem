@@ -117,14 +117,54 @@ class LoginView(View):
             return HttpResponseRedirect(reverse('problem:problemList'))
 
     def post(self, request, *args, **kwargs):
-        username = request.POST['user_name']
-        password = request.POST['user_password1']
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return HttpResponseRedirect(reverse('problem:problemList'))
+        username = request.POST.get('user_name')
+        password = request.POST.get('user_password1')
+        captcha = request.POST.get('captcha')
+        uuid = request.POST.get('uuid')
+
+        if not all([username, password, captcha, uuid]):
+            return JsonResponse({"show": "true", "msg": "信息不全"})
+
+        # 检测验证码是否正确
+        try:
+            redis_conn = get_redis_connection('verify_captcha')
+        except Exception as e:
+            print("连接redis失败{}".format(e))
+            return HttpResponse(status=500)
+        correct_captcha = redis_conn.get("image_uuid:{}".format(uuid))
+        if (correct_captcha is None) or \
+                (correct_captcha.decode().lower() != captcha.lower()):
+            # print("correct captcha is {}".format(correct_captcha.decode()))
+            return JsonResponse({"show": "true", "msg": "验证码错误"})
+
+        user = None
+        # 检测用户名和密码
+        if re.match(
+                "^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$",
+                username):
+            # 邮箱登陆
+            user = User.objects.filter(email=username)
+            if len(user) <= 0:
+                return JsonResponse({"show": "true", "msg": "用户名或者密码错误"})
+            if user[0].check_password(password) != True:
+                return JsonResponse({"show": "true", "msg": "用户名或者密码错误"})
+            user = user[0]
         else:
-            return HttpResponse("登陆失败")
+            # 用户名登陆
+            user = authenticate(username=username, password=password)
+            if user is None:
+                return JsonResponse({"show": "true", "msg": "用户名或者密码错误"})
+
+        login(request, user)
+        return HttpResponseRedirect(reverse('problem:problemList'))
+        # username = request.POST['user_name']
+        # password = request.POST['user_password1']
+        # user = authenticate(request, username=username, password=password)
+        # if user is not None:
+        #     login(request, user)
+        #     return HttpResponseRedirect(reverse('problem:problemList'))
+        # else:
+        #     return HttpResponse("登陆失败")
 
 
 def logoutView(request):
