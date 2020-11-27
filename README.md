@@ -61,3 +61,16 @@ de9f779102de        redis-test            0.0.0.0:6379->6379/tcp
 用开发环境重新配置数据库
 `python manage.py makemigrations --settings online_judge_server.settings.dev`
 `python manage.py migrate --settings online_judge_server.settings.dev`
+
+
+## 部署minio
+
+运行minio服务
+```shell script
+docker pull minio/minio
+docker run -p 9000:9000 minio/minio server /data
+```
+
+访问 http://127.0.0.1:9000/ 即可 密码和账号都是minioadmin
+
+将数据桶设置为public模式，这样可以以文件名的形式直接访问文件`mc policy set public s3/images`
