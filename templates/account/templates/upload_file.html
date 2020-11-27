@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+    <link rel="stylesheet" type="text/css"
+          href={% static 'layui-v2.5.6/layui/css/layui.css' %}/>
+    <script src={% static 'layui-v2.5.6/layui/layui.js' %} type="text/javascript"
+            charset="utf-8"></script>
+
+    <style type="text/css">
+        .layui-btn {
+            height: 200px;
+            width: 300px;
+        }
+    </style>
+
+    <button type="button" class="layui-btn" id="test1">
+        <i class="layui-icon">&#xe67c;</i>拖拽图片到此
+    </button>
+    <br>
+    <br>
+    <span id="span_image_url">图片链接:</span>
+
+
+    <script>
+        layui.use('upload', function () {
+            var upload = layui.upload;
+
+            //执行实例
+            var uploadInst = upload.render({
+                elem: '#test1', //绑定元素
+                url: '/account/upload_file/', //上传接口
+                done: function (res) {
+                    // 上传完毕回调
+                    var span_a = document.getElementById('span_image_url');
+                    console.log(res);
+                    span_a.innerText = "图片链接: " + res.msg;
+                },
+                error: function () {
+                    // 请求异常回调
+                },
+            });
+        });
+    </script>
+
+
+
+{% endblock %}
+

@@ -2,6 +2,7 @@ import random
 import functools
 import os
 import re
+import time
 
 from django.shortcuts import render
 from django.views import View
@@ -25,6 +26,10 @@ from online_judge_server.settings.base import connet_redis
 from lib.captcha.captcha import captcha
 
 from django.contrib.auth.models import AnonymousUser
+
+from minio import Minio
+from minio.error import ResponseError
+from lib.captcha.captcha import captcha
 
 
 @method_decorator(login_required, name="dispatch")
@@ -424,3 +429,51 @@ def show_user_submited_code(request):
         return render(request,
                       template_name="account/templates/show_user_submited_code.html",
                       context=context)
+
+
+def load_file(request):
+    """
+    上传文件接口
+    :param request:
+    :return:
+    """
+
+    minio_host_url = '127.0.0.1:9000'
+    if request.method == "GET":
+        return render(request, template_name='account/templates/upload_file.html')
+
+    if request.method == "POST":
+        file = request.FILES.get('file')
+        if file is None:
+            return JsonResponse({'msg': ''})
+
+        # 提取图片类型
+        try:
+            type_name = file.name.split(".")[-1]
+        except:
+            return JsonResponse({"msg": "提取文件名失败"})
+
+        # 随机化名字 time+随机值
+        try:
+            object_name = time.time().__str__().replace('.', '_') \
+                          + "_" \
+                          + random.random().__str__().replace('.', "_") \
+                          + "." \
+                          + type_name
+        except:
+            return JsonResponse({"msg": "拼接文件名错误"})
+
+        # 上传文件
+        try:
+            minioClient = Minio(endpoint=minio_host_url,
+                                access_key='minioadmin',
+                                secret_key='minioadmin',
+                                secure=False)
+            obj = minioClient.put_object("images", object_name, file,
+                                         file.size, content_type='image/png')
+        except Exception as e:
+            return JsonResponse({"msg": "文件上传至 minio出错{}".format(e)})
+
+        return JsonResponse({"msg": 'http://' + minio_host_url + '/' + 'images/' + object_name})
+    else:
+        return JsonResponse({'msg': '类型错误，请使用post'})

@@ -18,5 +18,5 @@ urlpatterns = [
     path("get_captcha/", views.get_captcha),
     path("check_captcha/", views.check_captcha),
     path("check_login/", views.check_password_correct),
-
+    path("upload_file/", views.load_file, name='upload_file'),
 ]
