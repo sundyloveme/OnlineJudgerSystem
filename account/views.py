@@ -24,6 +24,7 @@ from judger_problem.models import SubmitStatus, Notes
 from account.models import ClassRecode, UserInfo
 from online_judge_server.settings.base import connet_redis
 from lib.captcha.captcha import captcha
+from celery_tasks import tasks
 
 from django.contrib.auth.models import AnonymousUser
 
@@ -68,7 +69,7 @@ def check_password_correct(request):
     :param request:
     :return:
     """
-
+    # TODO
     username = request.POST.get('user_name')
     password = request.POST.get('user_password1')
     captcha = request.POST.get('captcha')
@@ -81,6 +82,7 @@ def check_password_correct(request):
     try:
         redis_conn = get_redis_connection('verify_captcha')
     except Exception as e:
+        # TODO
         print("连接redis失败{}".format(e))
         return HttpResponse(status=500)
     correct_captcha = redis_conn.get("image_uuid:{}".format(uuid))
@@ -162,14 +164,6 @@ class LoginView(View):
 
         login(request, user)
         return HttpResponseRedirect(reverse('problem:problemList'))
-        # username = request.POST['user_name']
-        # password = request.POST['user_password1']
-        # user = authenticate(request, username=username, password=password)
-        # if user is not None:
-        #     login(request, user)
-        #     return HttpResponseRedirect(reverse('problem:problemList'))
-        # else:
-        #     return HttpResponse("登陆失败")
 
 
 def logoutView(request):
@@ -440,7 +434,8 @@ def load_file(request):
 
     minio_host_url = '127.0.0.1:9000'
     if request.method == "GET":
-        return render(request, template_name='account/templates/upload_file.html')
+        return render(request,
+                      template_name='account/templates/upload_file.html')
 
     if request.method == "POST":
         file = request.FILES.get('file')
@@ -474,6 +469,64 @@ def load_file(request):
         except Exception as e:
             return JsonResponse({"msg": "文件上传至 minio出错{}".format(e)})
 
-        return JsonResponse({"msg": 'http://' + minio_host_url + '/' + 'images/' + object_name})
+        return JsonResponse(
+            {"msg": 'http://' + minio_host_url + '/' + 'images/' + object_name})
     else:
         return JsonResponse({'msg': '类型错误，请使用post'})
+
+
+def send_email_captcha(request):
+    """
+    发送邮箱验证码
+    :param request:
+    :return:
+    """
+    if request.method == 'GET':
+        email = request.GET.get('email')
+        if email is None:
+            return HttpResponse("邮箱不能为空")
+
+        if not re.match(
+                "^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$",
+                email):
+            return HttpResponse("邮箱格式不正确")
+
+        try:
+            text, image = captcha.generate_captcha()
+        except:
+            print("生成验证码失败")
+
+        print("{} -> 验证码是{}".format(email, text))
+
+        redis_conn = get_redis_connection('verify_captcha')
+        redis_conn.setex('email_captcha:{}'.format(email), 60 * 5, text)
+        tasks.send_email.delay(email, '邮箱验证', '您的验证码是{}'.format(text))
+        return HttpResponse("邮件发送成功")
+    else:
+        return HttpResponse("请使用get方法访问")
+
+
+class VerifyEmail(View):
+
+    def post(self, request):
+        """
+        验证邮箱验证码
+        :return:
+        """
+        email = request.POST.get("email")
+        captcha = request.POST.get("captcha")
+
+        if not all([email, captcha]):
+            return HttpResponse("参数不齐全")
+
+        redis_conn = get_redis_connection('verify_captcha')
+
+        try:
+            correct_captcha = redis_conn.get('email_captcha:{}'.format(email))
+        except:
+            return HttpResponse("验证码错误")
+
+        if correct_captcha.decode().lower() == captcha.lower():
+            return HttpResponse("邮箱校验成功")
+        else:
+            return HttpResponse("验证码错误")

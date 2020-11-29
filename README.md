@@ -55,7 +55,9 @@ de9f779102de        redis-test            0.0.0.0:6379->6379/tcp
 
 `docker-mysql-server` mysql服务器
 
-`judger_server` mysql服务器
+`judger_server` 判题服务器
+
+`minio` 文件存储服务
 
 ## 其他命令
 用开发环境重新配置数据库

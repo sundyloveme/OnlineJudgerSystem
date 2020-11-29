@@ -19,4 +19,6 @@ urlpatterns = [
     path("check_captcha/", views.check_captcha),
     path("check_login/", views.check_password_correct),
     path("upload_file/", views.load_file, name='upload_file'),
+    path('send_email/', views.send_email_captcha),
+    path('verify_email/', views.VerifyEmail.as_view()),
 ]

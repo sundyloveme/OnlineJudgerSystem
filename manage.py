@@ -7,7 +7,7 @@ import sys
 def main():
     # 默认环境配置文件为`production` 即`部署`环境配置文件
     os.environ.setdefault('DJANGO_SETTINGS_MODULE',
-                          'online_judge_server.settings.production')
+                          'online_judge_server.settings.dev')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
