@@ -1,112 +1,86 @@
-import random
 import functools
+import logging
 import os
+import random
 import re
 import time
 
-from django.shortcuts import render
-from django.views import View
-from django.core.mail import send_mail
-from django.contrib.auth.models import User
+from django import conf
 from django.contrib.auth import authenticate
 from django.contrib.auth import login
 from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.models import User
+from django.core.mail import send_mail
 from django.http import HttpResponse, JsonResponse
 from django.http import HttpResponseRedirect
+from django.shortcuts import render
 from django.urls import reverse
-from django.contrib.auth.decorators import login_required
-from django.views.generic.list import ListView
-from django.utils.decorators import method_decorator
-import redis
+from django.views import View
 from django_redis import get_redis_connection
-
-from judger_problem.models import SubmitStatus, Notes
-from account.models import ClassRecode, UserInfo
-from online_judge_server.settings.base import connet_redis
-from lib.captcha.captcha import captcha
-from celery_tasks import tasks
-
-from django.contrib.auth.models import AnonymousUser
-
 from minio import Minio
-from minio.error import ResponseError
+
+from account.models import UserInfo
+from celery_tasks import tasks
+from judger_problem.models import SubmitStatus
+from lib import utils, re_express
 from lib.captcha.captcha import captcha
+from lib.utils import JsonResponseSimple
+from online_judge_server.settings.base import connet_redis
+
+logger = logging.getLogger('django')
 
 
-@method_decorator(login_required, name="dispatch")
-class ClassRecodeView(View):
+def check_name_passwd_cap(POST):
     """
-    上课记录视图
+    检测用户名、密码和验证码是否正确
     """
+    result = {"is_ok": False, "msg": ""}
 
-    def get(self, request, *args, **kwargs):
-        if "class_recode_id" in request.GET:
-            """如果存在class_recode_id查询参数，渲染讲师评语页面"""
-            class_recode = \
-                ClassRecode.objects.filter(id=request.GET['class_recode_id'])[0]
-
-            comments = class_recode.comment
-            context = {"comments": comments}
-            return render(request,
-                          template_name="account/templates/comment_detail.html",
-                          context=context)
-        else:
-            """不存在class_recode_id查询参数，渲染上课记录列表"""
-            if request.user.is_staff:
-                """如果是管理员登陆则显示所有人员上课记录"""
-                context = {'class_recode_list': ClassRecode.objects.all()}
-            else:
-                context = {'class_recode_list': ClassRecode.objects.filter(
-                    fk_user=self.request.user)}
-            return render(request,
-                          template_name="account/templates/class_recode_list.html",
-                          context=context)
-
-
-def check_password_correct(request):
-    """
-    检测用户名和密码是否正确
-    :param request:
-    :return:
-    """
-    # TODO
-    username = request.POST.get('user_name')
-    password = request.POST.get('user_password1')
-    captcha = request.POST.get('captcha')
-    uuid = request.POST.get('uuid')
+    try:
+        username = POST.get('user_name')[0]
+        password = POST.get('user_password1')[0]
+        captcha = POST.get('captcha')[0]
+        uuid = POST.get('uuid')[0]
+    except Exception as e:
+        logger.error('参数获取失败 {}'.format(e))
 
     if not all([username, password, captcha, uuid]):
-        return JsonResponse({"show": "true", "msg": "信息不全"})
+        result['msg'] = "信息不全"
+        return result
 
     # 检测验证码是否正确
-    try:
-        redis_conn = get_redis_connection('verify_captcha')
-    except Exception as e:
-        # TODO
-        print("连接redis失败{}".format(e))
-        return HttpResponse(status=500)
-    correct_captcha = redis_conn.get("image_uuid:{}".format(uuid))
-    if (correct_captcha is None) or \
-            (correct_captcha.decode().lower() != captcha.lower()):
-        # print("correct captcha is {}".format(correct_captcha.decode()))
-        return JsonResponse({"show": "true", "msg": "验证码错误"})
+    if not utils.check_captcha(uuid, captcha):
+        result['msg'] = "验证码错误"
+        return result
 
     # 检测用户名和密码
-    if re.match("^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$",
-                username):
+    if re.match(re_express.email_express, username):
         # 邮箱登陆
         user = User.objects.filter(email=username)
-        if len(user) <= 0:
-            return JsonResponse({"show": "true", "msg": "用户名或者密码错误"})
-        if user[0].check_password(password) != True:
-            return JsonResponse({"show": "true", "msg": "用户名或者密码错误"})
+        if (len(user)) <= 0 or (user[0].check_password(password) != True):
+            result['msg'] = "用户名或者密码错误"
+            return result
     else:
         # 用户名登陆
         user = authenticate(username=username, password=password)
         if user is None:
-            return JsonResponse({"show": "true", "msg": "用户名或者密码错误"})
+            result['msg'] = "用户名或者密码错误"
+            return result
 
-    return JsonResponse({"show": "false", "msg": ""})
+    result['is_ok'] = True
+    return result
+
+
+class CheckLoginView(View):
+    def post(self, request):
+        POST = dict(request.POST)
+        result = check_name_passwd_cap(POST)
+        if result['is_ok']:
+            return JsonResponseSimple(show="false", msg='')
+        else:
+            return JsonResponseSimple(show="true", msg=result['msg'])
 
 
 class LoginView(View):
@@ -123,47 +97,23 @@ class LoginView(View):
             # 已登录用户不展示登陆页面
             return HttpResponseRedirect(reverse('problem:problemList'))
 
-    def post(self, request, *args, **kwargs):
-        username = request.POST.get('user_name')
-        password = request.POST.get('user_password1')
-        captcha = request.POST.get('captcha')
-        uuid = request.POST.get('uuid')
-
-        if not all([username, password, captcha, uuid]):
-            return JsonResponse({"show": "true", "msg": "信息不全"})
-
-        # 检测验证码是否正确
-        try:
-            redis_conn = get_redis_connection('verify_captcha')
-        except Exception as e:
-            print("连接redis失败{}".format(e))
-            return HttpResponse(status=500)
-        correct_captcha = redis_conn.get("image_uuid:{}".format(uuid))
-        if (correct_captcha is None) or \
-                (correct_captcha.decode().lower() != captcha.lower()):
-            # print("correct captcha is {}".format(correct_captcha.decode()))
-            return JsonResponse({"show": "true", "msg": "验证码错误"})
-
-        user = None
-        # 检测用户名和密码
-        if re.match(
-                "^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$",
-                username):
-            # 邮箱登陆
-            user = User.objects.filter(email=username)
-            if len(user) <= 0:
-                return JsonResponse({"show": "true", "msg": "用户名或者密码错误"})
-            if user[0].check_password(password) != True:
-                return JsonResponse({"show": "true", "msg": "用户名或者密码错误"})
-            user = user[0]
+    def post(self, request):
+        POST = dict(request.POST)
+        # 验证用户名、密码、验证码正确性
+        result = check_name_passwd_cap(POST)
+        if result['is_ok']:
+            username = POST.get('user_name')[0]
+            # 检测用户名和密码
+            if re.match(re_express.email_express, username):
+                # 邮箱登陆
+                user = User.objects.filter(email=username)[0]
+            else:
+                # 用户名登陆
+                user = User.objects.filter(username=username)[0]
+            login(request, user)
+            return HttpResponseRedirect(reverse('problem:problemList'))
         else:
-            # 用户名登陆
-            user = authenticate(username=username, password=password)
-            if user is None:
-                return JsonResponse({"show": "true", "msg": "用户名或者密码错误"})
-
-        login(request, user)
-        return HttpResponseRedirect(reverse('problem:problemList'))
+            return HttpResponse("登陆失败")
 
 
 def logoutView(request):
@@ -179,22 +129,20 @@ def check_email_repeat(request):
     :return:
     """
     if not request.method == 'POST':
-        return HttpResponse("请使用post方式访问")
+        return JsonResponseSimple(show="true", msg='请使用post方式访问')
     else:
         if request.POST.get('email') == None:
-            return HttpResponse("参数不齐")
+            return JsonResponseSimple(show="true", msg='参数不齐')
 
         user_email = request.POST.get('email')
 
-        if not re.match(
-                "^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$",
-                user_email):
-            return JsonResponse({"show": 'true', "msg": "邮箱格式不合符规范"})
+        if not re.match(re_express.email_express, user_email):
+            return JsonResponseSimple(show="true", msg='邮箱格式不合符规范')
 
         if len(User.objects.filter(email=user_email)) > 0:
-            return JsonResponse({"show": 'true', "msg": "该邮箱已注册"})
+            return JsonResponseSimple(msg="该邮箱已注册", show="true")
 
-        return JsonResponse({"show": 'false', "msg": ""})
+        return JsonResponseSimple(msg="", show='false')
 
 
 def check_nick_name_repeat(request):
@@ -203,29 +151,28 @@ def check_nick_name_repeat(request):
     :param request:
     :return:
     """
+
     if not request.method == 'POST':
-        return HttpResponse("请使用post方式访问")
+        return JsonResponseSimple(show='true', msg="请使用post方式访问")
     else:
         if request.POST.get('nick_name') == None:
-            return HttpResponse("参数不齐")
+            return JsonResponseSimple(show='true', msg="参数不齐")
 
         nick_name = request.POST.get('nick_name')
 
-        if not re.match("^[a-zA-Z0-9_\u4e00-\u9fa5]+$", nick_name):
-            return JsonResponse({"show": 'true', "msg": "用户名不符合规范"})
+        if not re.match(re_express.nick_name_express, nick_name):
+            return JsonResponseSimple(show='true', msg="用户名不符合规范")
 
         if len(User.objects.filter(username=nick_name)) > 0:
-            return JsonResponse({"show": 'true', "msg": "该用户名已注册"})
-
-        return JsonResponse({"show": 'false', "msg": ""})
+            return JsonResponseSimple(show='true', msg="该用户名已注册")
+        return JsonResponseSimple(show='false', msg="")
 
 
 def get_captcha(request):
     """
     获取验证码接口
-    get方式提供uuid 验证码和uuid绑定
-    :param request:
-    :return:
+    get方式提供uuid
+    return 图形验证码
     """
     if not request.method == 'GET':
         return HttpResponse("请使用get方式访问")
@@ -252,27 +199,19 @@ def get_captcha(request):
 
 def check_captcha(request):
     """
-    验证码是否正确接口
-    get方式提供 uuid和验证码
-    :param request:
-    :return:
+    检测图形验证码是否正确接口
+    get方式提供: uuid和验证码
     """
     if request.method == "GET":
         uuid = request.GET.get('uuid')
         captcha_code = request.GET.get('captcha_code')
         if not all([uuid, captcha_code]):
-            return HttpResponse("参数不齐全")
+            return JsonResponseSimple(show='true', msg="参数不齐全")
 
-        try:
-            redis_conn = get_redis_connection('verify_captcha')
-        except Exception as e:
-            print("redis连接异常 {}".format(e))
-        correct_code = redis_conn.get("image_uuid:{}".format(uuid))
-        print("correct_code is {}".format(correct_code))
-        if correct_code.decode().lower() == captcha_code.lower():
-            return JsonResponse({"show": "false", "msg": ""})
+        if utils.check_captcha(uuid, captcha_code):
+            return JsonResponseSimple(show='false', msg="")
         else:
-            return JsonResponse({"show": "true", "msg": "验证码错误"})
+            return JsonResponseSimple(show='true', msg="验证码错误")
 
 
 class RegisterView(View):
@@ -306,31 +245,19 @@ class RegisterView(View):
             return JsonResponse({"show": "true", "msg": "请正确填写"})
 
         # 邮箱重复检测
-        if not re.match(
-                "^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$",
-                user_mail):
+        if not re.match(re_express.email_express, user_mail):
             return JsonResponse({"show": 'true', "msg": "邮箱格式不合符规范"})
         if len(User.objects.filter(email=user_mail)) > 0:
             return JsonResponse({"show": 'true', "msg": "该邮箱已注册"})
 
         # 用户名重复检测
-        if not re.match("^[a-zA-Z0-9_\u4e00-\u9fa5]+$", user_name):
+        if not re.match(re_express.nick_name_express, user_name):
             return JsonResponse({"show": 'true', "msg": "用户名不符合规范"})
         if len(User.objects.filter(username=user_name)) > 0:
             return JsonResponse({"show": 'true', "msg": "该用户名已注册"})
 
         # 验证码检测
-        if len(captcha) != 4:
-            return JsonResponse({"show": 'true', "msg": "验证码错误"})
-        try:
-            redis_conn = get_redis_connection("verify_captcha")
-        except Exception as e:
-            print("连接redis出错{}".format(e))
-        correct_code = redis_conn.get("image_uuid:{}".format(uuid))
-        if correct_code == None:
-            return JsonResponse({"show": 'true', "msg": "验证码错误"})
-        print("correct_code is {}".format(correct_code))
-        if correct_code.decode().lower() != captcha.lower():
+        if not utils.check_captcha(uuid, captcha):
             return JsonResponse({"show": "true", "msg": "验证码错误"})
 
         # 密码两次一样检测
@@ -345,33 +272,33 @@ class RegisterView(View):
         return HttpResponseRedirect(reverse('problem:problemList'))
 
 
-def sendEmailView(request):
-    """
-    发送邮件视图
-    :param request:request.GET['email']用户邮箱
-    :return:
-    """
-
-    if len(User.objects.filter(email=request.GET['email'])) > 0:
-        return HttpResponse("您输入的邮箱已经注册")
-
-    # 生成四位验证码
-    num = functools.partial(random.randint, a=0, b=9)
-    code4 = str(num()) + str(num()) + str(num()) + str(num())
-
-    if request.method == "GET":
-        send_mail(
-            '来自李扣在线评测系统的邮件',
-            "您的验证码为:" + code4,
-            os.environ.get("EMAIL_HOST_USER"),
-            [request.GET['email']],
-        )
-
-    # 四位验证码存入redis数据库
-    # 如 key=xxx@mail.com, value="1234"
-    r = connet_redis()
-    r.set(request.GET['email'], code4)
-    return HttpResponse("验证码已发送至你的邮箱!")
+# def sendEmailView(request):
+#     """
+#     发送邮件视图
+#     :param request:request.GET['email']用户邮箱
+#     :return:
+#     """
+#
+#     if len(User.objects.filter(email=request.GET['email'])) > 0:
+#         return HttpResponse("您输入的邮箱已经注册")
+#
+#     # 生成四位验证码
+#     num = functools.partial(random.randint, a=0, b=9)
+#     code4 = str(num()) + str(num()) + str(num()) + str(num())
+#
+#     if request.method == "GET":
+#         send_mail(
+#             '来自李扣在线评测系统的邮件',
+#             "您的验证码为:" + code4,
+#             os.environ.get("EMAIL_HOST_USER"),
+#             [request.GET['email']],
+#         )
+#
+#     # 四位验证码存入redis数据库
+#     # 如 key=xxx@mail.com, value="1234"
+#     r = connet_redis()
+#     r.set(request.GET['email'], code4)
+#     return HttpResponse("验证码已发送至你的邮箱!")
 
 
 @login_required
@@ -391,20 +318,20 @@ def submit_status_list_view(request):
                       context=context)
 
 
-@login_required
-def note_list(request):
-    """
-    展示用户笔记列表
-    :param request:
-    :return:
-    """
-    if request.method == "GET":
-        note_lists = Notes.objects.filter(author_id=request.user.id)
-        context = {
-            "note_list": note_lists,
-        }
-        return render(request, template_name="account/templates/note_list.html",
-                      context=context)
+# @login_required
+# def note_list(request):
+#     """
+#     展示用户笔记列表
+#     :param request:
+#     :return:
+#     """
+#     if request.method == "GET":
+#         note_lists = Notes.objects.filter(author_id=request.user.id)
+#         context = {
+#             "note_list": note_lists,
+#         }
+#         return render(request, template_name="account/templates/note_list.html",
+#                       context=context)
 
 
 @login_required
@@ -432,7 +359,7 @@ def load_file(request):
     :return:
     """
 
-    minio_host_url = '127.0.0.1:9000'
+    minio_host_url = conf.settings.MINIO_URL
     if request.method == "GET":
         return render(request,
                       template_name='account/templates/upload_file.html')
@@ -440,13 +367,13 @@ def load_file(request):
     if request.method == "POST":
         file = request.FILES.get('file')
         if file is None:
-            return JsonResponse({'msg': ''})
+            return JsonResponseSimple(show='false', msg='')
 
         # 提取图片类型
         try:
             type_name = file.name.split(".")[-1]
         except:
-            return JsonResponse({"msg": "提取文件名失败"})
+            return JsonResponseSimple(show='true', msg='提取文件名失败')
 
         # 随机化名字 time+随机值
         try:
@@ -456,7 +383,7 @@ def load_file(request):
                           + "." \
                           + type_name
         except:
-            return JsonResponse({"msg": "拼接文件名错误"})
+            return JsonResponseSimple(show='true', msg='拼接文件名错误')
 
         # 上传文件
         try:
@@ -467,12 +394,12 @@ def load_file(request):
             obj = minioClient.put_object("images", object_name, file,
                                          file.size, content_type='image/png')
         except Exception as e:
-            return JsonResponse({"msg": "文件上传至 minio出错{}".format(e)})
+            return JsonResponseSimple(show='true', msg="文件上传至 minio出错{}".format(e))
 
         return JsonResponse(
             {"msg": 'http://' + minio_host_url + '/' + 'images/' + object_name})
     else:
-        return JsonResponse({'msg': '类型错误，请使用post'})
+        return JsonResponseSimple(show='true', msg="类型错误，请使用post")
 
 
 def send_email_captcha(request):
@@ -487,7 +414,7 @@ def send_email_captcha(request):
             return HttpResponse("邮箱不能为空")
 
         if not re.match(
-                "^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$",
+                re_express.email_express,
                 email):
             return HttpResponse("邮箱格式不正确")
 
@@ -507,7 +434,6 @@ def send_email_captcha(request):
 
 
 class VerifyEmail(View):
-
     def post(self, request):
         """
         验证邮箱验证码
@@ -524,6 +450,8 @@ class VerifyEmail(View):
         try:
             correct_captcha = redis_conn.get('email_captcha:{}'.format(email))
         except:
+            return HttpResponse("验证码错误")
+        if correct_captcha == None:
             return HttpResponse("验证码错误")
 
         if correct_captcha.decode().lower() == captcha.lower():

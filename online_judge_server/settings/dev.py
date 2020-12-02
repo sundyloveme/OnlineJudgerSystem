@@ -226,3 +226,11 @@ HAYSTACK_CONNECTIONS = {
         'PATH': os.path.join(os.path.dirname(__file__), 'whoosh_index'),
     },
 }
+
+
+# minio服务器地址
+MINIO_URL = '127.0.0.1:9000'
+
+
+# 判题服务器地址
+OJ_URL = "http://120.92.173.80:8080/"

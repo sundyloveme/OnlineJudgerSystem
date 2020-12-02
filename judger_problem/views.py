@@ -1,5 +1,6 @@
 import json
 
+from django import conf
 from django.shortcuts import render
 from django.views import View
 from django.utils.decorators import method_decorator
@@ -216,8 +217,7 @@ class ProblemDetail(View):
         user_code = request.POST['user_code']
         test_case_input_list = problem.problem_test_case_input.split("///")
         result = self.get_user_outputs(user_code, test_case_input_list,
-                                       "http://120.92.173.80:8080/")
-
+                                       conf.settings.OJ_URL)
         # 设置提交状态
         submit_status = SubmitStatus()
         submit_status.fk_problem_id = problem

@@ -1,14 +1,14 @@
 <nav class="navbar navbar-default" role="navigation">
 	<div class="container-fluid">
 	<div class="navbar-header">
-		<a class="navbar-brand" href="{% url 'problem:problemList' %}">Sundy青少年编程课堂</a>
+		<a class="navbar-brand" href="{% url 'problem:problemList' %}">聚合OnlineJudge</a>
 	</div>
 	<div>
 		<ul class="nav navbar-nav">
 {#			<li><a href="#">探索</a></li>#}
 			<li><a href="{% url 'problem:problemList' %}">题库</a></li>
             <li><a href="{% url 'account:upload_file' %}">图床</a></li>
-            <li><a href="{% url 'account:classrecode' %}">上课记录</a></li>
+{#            <li><a href="{% url 'account:classrecode' %}">上课记录</a></li>#}
             <li>
 {#                <form class="form-inline my-2 my-lg-0" role="search" method="POST" action="{% url 'problem:search' %}" target="_blank">#}
 {#                    {% csrf_token %}#}
@@ -43,7 +43,7 @@
                 </a>
                 <ul class="dropdown-menu">
 {#                    <li><a>我的收藏</a></li>#}
-                    <li><a href="{% url 'account:show_user_notes' %}">我的笔记本</a></li>
+{#                    <li><a href="{% url 'account:show_user_notes' %}">我的笔记本</a></li>#}
                     <li><a href="{% url 'account:submit_record' %}">我的提交记录</a></li>
 {#                    <li><a>我的题解</a></li>#}
 {#                    <li><a href="{% url 'account:classrecode' %}">上课记录</a></li>#}
