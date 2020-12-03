@@ -28,7 +28,7 @@ class JsonResponseSimple(JsonResponse):
     重写JsonResponse
     简便返回json
     """
-    def __init__(self, show, msg, encoder=DjangoJSONEncoder, safe=True,
+    def __init__(self, show=None, msg=None, result=None, encoder=DjangoJSONEncoder, safe=True,
                  json_dumps_params=None, **kwargs):
-        data = {"show": show, "msg": msg}
+        data = {"show": str(show), "msg": str(msg), "result": str(result)}
         super().__init__(data, encoder, safe, json_dumps_params, **kwargs)

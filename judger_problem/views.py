@@ -1,17 +1,22 @@
 import json
+import logging
 
+import markdown2
+import requests
 from django import conf
-from django.shortcuts import render
-from django.views import View
-from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.views.decorators.csrf import csrf_exempt
-import requests
+from django.http import JsonResponse
 from django.shortcuts import HttpResponse
+from django.shortcuts import render
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+from haystack.views import SearchView
 
 from .models import Problem, SubmitStatus, ProblemLabel, Notes
-import markdown2
+
+logger = logging.getLogger("django")
 
 
 def search_problem_view(request):
@@ -31,24 +36,106 @@ def search_problem_view(request):
                   context=context)
 
 
-@method_decorator(login_required, name="dispatch")
+class SearchJsonView(SearchView):
+    """
+    重写haystack的视图函数
+    原本返回的是html模板，重写后返回json数据
+    """
+
+    def create_response(self):
+        results = self.get_context()
+        ret = []
+
+        for result in results['page'].object_list:
+            ret.append({"id": result.object.id,
+                        "title": result.object.title})
+
+        return JsonResponse(ret, safe=False)
+
+
+def get_problem_counts():
+    """
+    查询题库中题目的总数
+    :return: 题库中题目的总数
+    """
+    try:
+        count = Problem.get_problem_list().count()
+    except Exception as e:
+        logger.error("查询错误 {}".format(e))
+        raise e
+    return count
+
+def get_problem_counts_view(request):
+    """
+    视图函数
+    json接口, 返回题库中题目的总数的接口视图
+    :param request:
+    :return: 总数
+    """
+    count = get_problem_counts()
+    return JsonResponse(dict(count=count))
+
+
+def get_user_correct_problem_counts(request):
+    """
+    查询用户正确的题目的总数
+    需要确保当前用户已经登陆
+    :param request: request.user 当前登录的用户对象
+    :return: 正确的题目的总数
+    """
+    try:
+        query = request.user.submit_status.filter(user_code_status='正确')
+    except Exception as e:
+        logger.error("查询用户正确题目出错")
+        return 0
+    return len(query)
+
+
+def get_user_correct_problem_counts_view(request):
+    """
+    视图函数
+    查询用户正确的题目的总数
+    :param request: request.user 当前登录的用户对象
+    :return: 正确的题目的总数
+    """
+    if request.user.is_authenticated is True:
+        count = get_user_correct_problem_counts(request)
+        return JsonResponse(dict(count=count))
+    else:
+        return JsonResponse(dict(msg="未登录，无法查询"))
+
+
+def get_problem_labes_view(request):
+    """
+    视图函数
+    获取所有题目标签
+    :param request:
+    :return: 以Json格式字符串返回标签列表
+    """
+    labels = ProblemLabel.objects.all().only('name')
+    return JsonResponse(dict(labels=[lable.name for lable in labels]))
+
+
+# @method_decorator(login_required, name="dispatch")
 class ProblemList(View):
     """
     首页视图
     """
 
-    proble_list_all = Problem.get_problem_list()
+    # TODO 删除
+    # proble_list_all = Problem.get_problem_list()
 
-    def get_problem_count(self):
-        """
-        获取题目总数
-        :return: 题目总数
-        """
-        try:
-            return self.proble_list_all.count()
-        except Exception as e:
-            print("返回题目总数出错", e)
-            return None
+    # def get_problem_count(self):
+    #     # TODO 删除
+    #     """
+    #     获取题目总数
+    #     :return: 题目总数
+    #     """
+    #     try:
+    #         return self.proble_list_all.count()
+    #     except Exception as e:
+    #         print("返回题目总数出错", e)
+    #         return None
 
     def get_user_correct_problems_id(self, user):
         """
@@ -60,7 +147,7 @@ class ProblemList(View):
             query = user.submit_status.filter(user_code_status='正确')
         except Exception as e:
             print("查询用户正确题目出错", e)
-            return None
+            return []
         query = set([q.fk_problem_id_id for q in query])
         return query
 
@@ -76,10 +163,11 @@ class ProblemList(View):
         """处理get请求"""
 
         # 已解决题目数量
-        solve_count = self.get_user_correct_problems_id(request.user).__len__()
+        # solve_count = self.get_user_correct_problems_id(request.user).__len__()
+        solve_count = get_user_correct_problem_counts(request)
 
         # 未解决题目数量
-        unsolve_count = self.get_problem_count() - solve_count
+        unsolve_count = get_problem_counts() - solve_count
 
         # user对象的正确题目的id集合
         right_prolems = self.get_user_correct_problems_id(request.user)
@@ -102,6 +190,7 @@ class ProblemList(View):
                       context=context)
 
 
+# TODO  删除
 @login_required
 @csrf_exempt
 def saveNote(request, problem_id):
@@ -141,8 +230,8 @@ class ProblemDetail(View):
         :return:
         """
         problem = Problem.objects.filter(id=kwargs["problem_id"])[0]
-        note = Notes.objects.filter(fk_problem_id=kwargs["problem_id"],
-                                    author_id=request.user.id).first()
+        # note = Notes.objects.filter(fk_problem_id=kwargs["problem_id"],
+        #                             author_id=request.user.id).first()
 
         # markdown格式转为html格式
         problem_describes = markdown2.markdown(problem.problem_content)
@@ -150,9 +239,9 @@ class ProblemDetail(View):
         context = {
             "problem_describes": problem_describes,  # 题目描述
             "problem_content": problem,
-            "note": note,
-            "like_count": Problem.get_liked_conut(kwargs["problem_id"]),
-            "collect_count": Problem.get_collect_count(kwargs["problem_id"])
+            # "note": note,
+            # "like_count": Problem.get_liked_conut(kwargs["problem_id"]),
+            # "collect_count": Problem.get_collect_count(kwargs["problem_id"])
         }
         return render(request=request,
                       template_name="judger_problem/templates/problem_detail.html",
@@ -175,7 +264,7 @@ class ProblemDetail(View):
         for case_input in test_case_inputs:
             if case_input != "":
                 data['user_input'] = case_input
-                result = requests.post(url, data=data)
+                result = requests.post(url, data=data, timeout=10)
                 result = json.loads(result.text)
                 if result["status"] == "error":
                     return "error"
@@ -185,8 +274,8 @@ class ProblemDetail(View):
     def is_correct_user_code(self, user_test_case_outputs, test_case_outputs):
         """
         判断用户输出结果是否正确
-        :param user_test_case_outputs:
-        :param test_case_outputs:
+        :param user_test_case_outputs: 用户的输入
+        :param test_case_outputs: 正确的输入
         :return: 正确返回True, 否则返回Flase
         """
         for i in range(0, len(user_test_case_outputs)):

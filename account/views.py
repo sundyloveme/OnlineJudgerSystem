@@ -35,7 +35,10 @@ logger = logging.getLogger('django')
 def check_name_passwd_cap(POST):
     """
     检测用户名、密码和验证码是否正确
+    :param POST: 字典，包含用户名、密码和验证码
+    :return:  正确 {"is_ok": True, "msg": ""}
     """
+
     result = {"is_ok": False, "msg": ""}
 
     try:
@@ -45,6 +48,7 @@ def check_name_passwd_cap(POST):
         uuid = POST.get('uuid')[0]
     except Exception as e:
         logger.error('参数获取失败 {}'.format(e))
+        raise e
 
     if not all([username, password, captcha, uuid]):
         result['msg'] = "信息不全"
@@ -57,13 +61,13 @@ def check_name_passwd_cap(POST):
 
     # 检测用户名和密码
     if re.match(re_express.email_express, username):
-        # 邮箱登陆
+        # 邮箱
         user = User.objects.filter(email=username)
         if (len(user)) <= 0 or (user[0].check_password(password) != True):
             result['msg'] = "用户名或者密码错误"
             return result
     else:
-        # 用户名登陆
+        # 用户名
         user = authenticate(username=username, password=password)
         if user is None:
             result['msg'] = "用户名或者密码错误"
@@ -75,6 +79,12 @@ def check_name_passwd_cap(POST):
 
 class CheckLoginView(View):
     def post(self, request):
+        """
+        视图类
+        检测用户用户信息是否正确
+        :param request: request.POST包含用户信息
+        :return: Json格式。 正确show="false"， 错误show="true"
+        """
         POST = dict(request.POST)
         result = check_name_passwd_cap(POST)
         if result['is_ok']:
@@ -89,6 +99,13 @@ class LoginView(View):
     """
 
     def get(self, request, *args, **kwargs):
+        """
+        渲染登陆页面
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
         if request.user == AnonymousUser():
             # 匿名用户展示登陆页面
             return render(request, template_name="account/templates/login.html",
@@ -98,6 +115,11 @@ class LoginView(View):
             return HttpResponseRedirect(reverse('problem:problemList'))
 
     def post(self, request):
+        """
+        用户登陆
+        :param request: request.POST包含用户信息
+        :return: 登陆成功返回首页，失败返回失败信息
+        """
         POST = dict(request.POST)
         # 验证用户名、密码、验证码正确性
         result = check_name_passwd_cap(POST)
@@ -117,6 +139,12 @@ class LoginView(View):
 
 
 def logoutView(request):
+    """
+    用户退出登陆视图
+    释放session数据
+    :param request:
+    :return:
+    """
     if request.method == "GET":
         logout(request)
         return HttpResponseRedirect(reverse('problem:problemList'))
@@ -125,8 +153,8 @@ def logoutView(request):
 def check_email_repeat(request):
     """
     检测邮箱是否重复的接口
-    :param request:
-    :return:
+    :param request: POST['email']
+    :return: 重复:show="true"
     """
     if not request.method == 'POST':
         return JsonResponseSimple(show="true", msg='请使用post方式访问')
@@ -394,7 +422,8 @@ def load_file(request):
             obj = minioClient.put_object("images", object_name, file,
                                          file.size, content_type='image/png')
         except Exception as e:
-            return JsonResponseSimple(show='true', msg="文件上传至 minio出错{}".format(e))
+            return JsonResponseSimple(show='true',
+                                      msg="文件上传至 minio出错{}".format(e))
 
         return JsonResponse(
             {"msg": 'http://' + minio_host_url + '/' + 'images/' + object_name})

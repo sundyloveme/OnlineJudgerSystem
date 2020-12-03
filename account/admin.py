@@ -11,4 +11,4 @@ class ClassRecodeAdmin(admin.ModelAdmin):
 
 admin.site.register(UserInfo)
 admin.site.register(ClassRecode, ClassRecodeAdmin)
-admin.site.site_title = admin.site.site_header = "少儿编程教育管理系统"
+admin.site.site_title = admin.site.site_header = "聚合OJ"
