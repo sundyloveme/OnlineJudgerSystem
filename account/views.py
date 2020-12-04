@@ -346,6 +346,22 @@ def submit_status_list_view(request):
                       context=context)
 
 
+def submit_status_all_list_view(request):
+    """
+    查看所有人的提交状态提交状态
+    :param request:
+    :return:
+    """
+    if request.method == "GET":
+        submit_list = SubmitStatus.objects.all()
+        context = {
+            "submit_list": submit_list
+        }
+        return render(request,
+                      template_name="account/templates/submit_list.html",
+                      context=context)
+
+
 # @login_required
 # def note_list(request):
 #     """

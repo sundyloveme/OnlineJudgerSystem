@@ -19,4 +19,6 @@ urlpatterns = [
     path('send_email/', views.send_email_captcha),
     path('verify_email/', views.VerifyEmail.as_view()),
     path('profile/', views.Profile.as_view(), name='profile'),
+    path('submit-status-all-list-view/', views.submit_status_all_list_view,
+         name='submit_status_all_list'),
 ]

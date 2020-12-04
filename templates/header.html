@@ -8,7 +8,7 @@
 {#			<li><a href="#">探索</a></li>#}
 			<li><a href="{% url 'problem:problemList' %}">题库</a></li>
             <li><a href="{% url 'account:upload_file' %}">图床</a></li>
-            <li><a>评测广场</a></li>
+            <li><a href="{% url 'account:submit_status_all_list' %}">评测广场</a></li>
 {#            <li><a href="{% url 'account:classrecode' %}">上课记录</a></li>#}
             <li>
                 <form class="form-inline my-2 my-lg-0" role="search" method="POST" action="{% url 'problem:search' %}" target="_blank">

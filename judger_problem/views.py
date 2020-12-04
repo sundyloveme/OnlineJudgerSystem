@@ -7,8 +7,9 @@ from django import conf
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import JsonResponse
-from django.shortcuts import HttpResponse
+from django.shortcuts import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -122,11 +123,9 @@ class ProblemList(View):
     首页视图
     """
 
-    # TODO 删除
     # proble_list_all = Problem.get_problem_list()
 
     # def get_problem_count(self):
-    #     # TODO 删除
     #     """
     #     获取题目总数
     #     :return: 题目总数
@@ -190,7 +189,6 @@ class ProblemList(View):
                       context=context)
 
 
-# TODO  删除
 @login_required
 @csrf_exempt
 def saveNote(request, problem_id):
@@ -215,7 +213,7 @@ def saveNote(request, problem_id):
         return HttpResponse("保存成功")
 
 
-@method_decorator(login_required, name="dispatch")
+# @method_decorator(login_required, name="dispatch")
 class ProblemDetail(View):
     """
     展示题目详情的视图
@@ -292,6 +290,10 @@ class ProblemDetail(View):
         :return: 返回get请求同样的内容外，还返回用户代码提交结果信息mess,
                  以及status; error:表示用户代码无法运行, success:表示用户代码可以运行但是输出不一定正确
         """
+
+        if request.user.is_authenticated == False:
+            # 未登录 跳转到登陆页面
+            return HttpResponseRedirect(reverse('account:login'))
 
         # 获取model对象problem
         problem = Problem.objects.filter(id=kwargs["problem_id"])[0]

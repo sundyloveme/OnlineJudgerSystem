@@ -5,6 +5,7 @@
             <thead>
             <tr>
                 <td>序号</td>
+                <td>昵称</td>
                 <td>题目</td>
                 <td>创建时间</td>
                 <td>代码</td>
@@ -15,6 +16,7 @@
             {% for submit in submit_list %}
                 <tr>
                     <td>{{ forloop.counter }}</td>
+                    <td>{{ submit.author.username }}</td>
                     <td>{{ submit.fk_problem_id.title }}</td>
                     <td>{{ submit.create_time }}</td>
                     <td><a href="{% url 'account:show_user_submited_code' %}?id={{ submit.id }}">查看</a></td>
