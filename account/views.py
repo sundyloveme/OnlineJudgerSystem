@@ -487,3 +487,76 @@ class VerifyEmail(View):
             return HttpResponse("邮箱校验成功")
         else:
             return HttpResponse("验证码错误")
+
+
+class Profile(View):
+    def get(self, request, big_message=""):
+        """
+        渲染用户信息页面
+        :param request:
+        :return:
+        """
+        if request.user.is_anonymous:
+            # 未登录跳转到登陆页面
+            return HttpResponseRedirect(reverse('account:login'))
+
+        try:
+            # 没有user_info 信息 新建一个
+            user_info = request.user.user_info
+        except:
+            userinfo = UserInfo(user=request.user)
+            request.user.user_info = userinfo
+            userinfo.save()
+            request.user.save()
+
+        nick_name = request.user.username
+        phone = request.user.user_info.iphone
+        email = request.user.email
+        resume = request.user.user_info.info
+
+        context = {
+            "nick_name": nick_name,
+            "phone": phone,
+            'email': email,
+            'resume': resume,
+            'big_message': big_message,
+        }
+
+        return render(request, template_name='account/templates/profile.html',
+                      context=context)
+
+    def post(self, request):
+        """
+        提交新的用户信息
+        :param request:
+        :return:
+        """
+        if request.user.is_anonymous:
+            # 未登录跳转到登陆页面
+            return HttpResponseRedirect(reverse('account:login'))
+
+        try:
+            # 校验邮箱验证码是否正确
+            result = VerifyEmail().post(request).content.decode()
+            if result != '邮箱校验成功':
+                return self.get(request, result)
+        except Exception as e:
+            logger.info("校验邮箱验证码失败{}".format(e))
+
+        nick_name = request.POST.get('nick_name')
+        phone = request.POST.get('phone')
+        email = request.POST.get('email')
+        resume = request.POST.get('resume')
+
+        # if not all([nick_name, phone, email]):
+        #     return self.get(request, big_message='信息不全')
+
+        request.user.username = nick_name
+        request.user.user_info.iphone = phone
+        request.user.email = email
+        request.user.user_info.info = resume
+
+        request.user.save()
+        request.user.user_info.save()
+
+        return self.get(request)

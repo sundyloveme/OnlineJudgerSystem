@@ -18,4 +18,5 @@ urlpatterns = [
     path("upload_file/", views.load_file, name='upload_file'),
     path('send_email/', views.send_email_captcha),
     path('verify_email/', views.VerifyEmail.as_view()),
+    path('profile/', views.Profile.as_view(), name='profile'),
 ]

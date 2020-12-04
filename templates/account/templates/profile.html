@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="col-md-4">
+        <form method="post" action="." id="app">
+			<div class="form-group">
+				 <label for="exampleInputEmail1">昵称</label>
+				<input type="text" class="form-control" name="nick_name" value="{{ nick_name }}">
+			</div>
+
+			<div class="form-group">
+				 <label for="exampleInputEmail1">手机号</label>
+				<input type="text" class="form-control" name="phone" value="{{ phone }}">
+			</div>
+
+			<div class="form-group">
+				 <label for="exampleInputEmail1">邮箱</label>
+				<input v-model="user_email" type="email" placeholder="邮箱地址" name="email" value="{{ email }}" class="form-control">
+				<input type="text" placeholder="邮箱验证码" name="captcha" class="form-control">
+                <span>[[ message ]]</span>
+				<input type="button" @click="send_email_cap" value="发送验证码">
+			</div>
+
+			<div class="form-group">
+				 <label for="exampleInputEmail1">个人简介</label>
+				 <textarea class="md-textarea form-control" name="resume">
+                     {{ resume }}
+				 </textarea>
+			</div>
+			<button class="btn btn-primary" type="submit">保存</button>
+		</form>
+        {{ big_message }}
+    </div>
+    <script>
+        var app = new Vue({
+            el: "#app",
+            delimiters: ["[[", "]]"],
+            data: {
+                message: "",
+                user_email: "{{ email }}",
+            },
+            methods:{
+                send_email_cap: function () {
+                    axios({
+                        method: 'get',
+                        url:"/account/send_email/?email=" + app.$data.user_email})
+                        .then(function (response) {
+                            app.$data.message = response.data;
+                            console.log(response.data);
+
+                    });
+                },
+            },
+        });
+    </script>
+
+{% endblock %}
+
