@@ -25,7 +25,7 @@ SECRET_KEY = 'f2how(cqd74k53xclxf5g)zxjow(925!6vylcoxn50v=06w!a-'
 # SECURITY WARNING: don't run with debug turned on in production!
 
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -203,7 +203,7 @@ LOGIN_URL = '/account/login'
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 # STATIC_URL = '/static/'
-STATIC_URL = '/static/'
+STATIC_URL = 'http://127.0.0.1:8080/static/'
 # STATIC_ROOT = 'static'
 STATICFILES_DIRS = [
     os.path.join(os.path.dirname(BASE_DIR), "static"),

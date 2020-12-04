@@ -1,13 +1,14 @@
+import os
+import pdb
 import smtplib
 from email.header import Header
 from email.mime.text import MIMEText
 from email.utils import parseaddr, formataddr
 
-from_addr = "sunlittlewhile@163.com"
-password = "l0ve2875106"
-# to_addr = "656233622@qq.com"
-smtp_server = "smtp.163.com"
 
+from_addr = os.environ.get("EMAIL_ADDRESS")
+password = os.environ.get("EMAIL_PASSWD")
+smtp_server = os.environ.get("EMAIL_SMTP")
 
 # content = "" # 您的验证码是， 请勿泄露
 
@@ -18,6 +19,7 @@ def _format_addr(s):
 
 
 def send_email(to_addr, subject, content):
+    # pdb.set_trace()
     msg = MIMEText(content, 'plain', 'utf-8')
     msg['From'] = _format_addr('聚合oj网 <%s>' % from_addr)
     msg['To'] = _format_addr('<%s>' % to_addr)
