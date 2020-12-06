@@ -1,11 +1,31 @@
-mysql数据库放入了docker中
+## 介绍
+一个在线代码评测系统（类似于leetcode）。主要使用Python语言和Django框架。
 
-在服务器上部署的时候
-确保服务器上mysql在3307端口
+## 技术
 
-1.拉取新的online_judge_web镜像
+`online_judger_web` 网站服务主体。主要使用Django框架
 
-2.运行镜像 在容器中要运行makemigration 和 migrate
+`redis` 主要负责存储验证码
+
+`mysql` 主要存储用户数据和题目数据
+
+`judger_server` 判题服务器。主要负责运行代码并返回运行结果。http协议通信。
+
+`minio` 文件存储服务。主要用于存储题目详情中的图片数据，相当于一个图床。
+
+
+
+
+
+## 截图
+
+![题目详情](https://ftp.bmp.ovh/imgs/2020/12/0254eb8ae5b99572.png)
+![题目列表](https://ftp.bmp.ovh/imgs/2020/12/333604f3cf775f1e.png)
+![个人信息页面](https://ftp.bmp.ovh/imgs/2020/12/1c842e3fccefc012.png)
+![注册页面](https://ftp.bmp.ovh/imgs/2020/12/49e54191c0dd26dd.png)
+![提交代码页面](https://ftp.bmp.ovh/imgs/2020/12/ae1ac67f5463f1e5.png)
+![登陆页面](https://ftp.bmp.ovh/imgs/2020/12/c7370eb1ed2931e3.png)
+![图床上传功能](https://ftp.bmp.ovh/imgs/2020/12/2b4721c93f9d1d25.png)
 
 
 ## 本地开发&运行&生产部署：
@@ -22,42 +42,6 @@ mysql数据库放入了docker中
 
 - 服务器端拉起镜像，运行部署脚本`run_docker_image_oneline_judge_web.sh`
 
-## 目录
-```
-.
-├── Dockerfile
-├── README.md
-├── __pycache__
-├── account
-├── judger_problem
-├── manage.py
-├── online_judge_server
-├── online_judge_web_env # 项目的环境变量
-├── requirements.txt
-├── run_docker_image_oneline_judge_web.sh # 运行镜像的脚本
-├── templates
-└── venv
-```
-
-## 部署服务器架构
-查看架构列表
-```shell script
-ubuntu@vm10-0-2-2:~$ sudo docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}"
-CONTAINER ID        NAMES                 PORTS
-70241ca842ac        online_judger_web     
-de9f779102de        redis-test            0.0.0.0:6379->6379/tcp
-76c430d07a50        docker-mysql-server   33060/tcp, 0.0.0.0:3307->3306/tcp
-1bf37f1d6a03        judger_server         0.0.0.0:8080->8080/tcp
-```
-`online_judger_web` 网站服务主体
-
-`redis-test` redis服务器 主要负责存储**验证码**
-
-`docker-mysql-server` mysql服务器
-
-`judger_server` 判题服务器
-
-`minio` 文件存储服务
 
 ## 其他命令
 用开发环境重新配置数据库

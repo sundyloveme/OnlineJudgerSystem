@@ -25,7 +25,7 @@ SECRET_KEY = 'f2how(cqd74k53xclxf5g)zxjow(925!6vylcoxn50v=06w!a-'
 # SECURITY WARNING: don't run with debug turned on in production!
 
 
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -82,7 +82,7 @@ WSGI_APPLICATION = 'online_judge_server.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'online_judge_server_database',
+        'NAME': 'online_judge_server_database2',
         'USER': 'root',
         'PASSWORD': 'password',
         'HOST': "localhost",
@@ -202,8 +202,8 @@ LOGIN_URL = '/account/login'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-# STATIC_URL = '/static/'
-STATIC_URL = 'http://127.0.0.1:8080/static/'
+STATIC_URL = '/static/'
+# STATIC_URL = 'http://127.0.0.1:8080/static/'
 # STATIC_ROOT = 'static'
 STATICFILES_DIRS = [
     os.path.join(os.path.dirname(BASE_DIR), "static"),
