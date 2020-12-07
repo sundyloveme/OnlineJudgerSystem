@@ -1,2 +1,4 @@
-broker_url = 'redis://127.0.0.1:6379/3'
-result_backend = 'redis://127.0.0.1:6379/4'
+import os
+
+broker_url = 'redis://' + os.environ.get("REDIS_HOST") + '/3'
+result_backend = 'redis://' + os.environ.get("REDIS_HOST") + '/4'

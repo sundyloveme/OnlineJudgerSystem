@@ -26,10 +26,14 @@ def send_email(to_addr, subject, content):
     msg['Subject'] = Header(subject, 'utf-8').encode()
 
     server = smtplib.SMTP(smtp_server, 25)
-    # server.set_debuglevel(1)
+    server.set_debuglevel(1)
     try:
         server.login(from_addr, password)
         server.sendmail(from_addr, [to_addr], msg.as_string())
     except Exception as e:
         print("发送邮件失败  {}".format(e))
     server.quit()
+
+
+if __name__ == '__main__':
+    send_email('656233622@qq.com', '这是一个测试邮件', '你的验证码为1234')

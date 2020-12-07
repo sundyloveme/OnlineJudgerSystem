@@ -1,0 +1,5 @@
+EMAIL_ADDRESS=sunlittlewhile@163.com
+EMAIL_PASSWD=l0ve2875106
+EMAIL_SMTP=smtp.163.com
+
+REDIS_HOST=redis

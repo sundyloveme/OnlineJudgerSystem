@@ -11,3 +11,8 @@ app = Celery('tasks')
 app.config_from_object('config')
 
 send_email = app.task(send_email)
+
+
+@app.task
+def add(a, b):
+    return a + b
