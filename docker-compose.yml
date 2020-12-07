@@ -1,0 +1,54 @@
+version: "3"
+
+services:
+
+  redis:
+    image: redis:5.0.8
+    ports:
+      - "6380:6379"
+
+  db:
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_HOST=localhost
+      - MYSQL_USER=root
+    restart: always
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./backup:/home
+      - ./mysql:/var/lib/mysql
+
+  web:
+    image: online_judge_server_web:latest
+    env_file:
+      - env
+#    command: 启动gunicorn
+    ports:
+      - "8383:8383"
+    volumes:
+      - .:/home
+    links:
+      - db
+      - redis
+    depends_on:
+      - db
+      - redis
+    restart: always
+
+  celery:
+    image: celery-tasks:latest
+    env_file:
+      - env
+    volumes:
+      - ./celery_tasks:/home/celery_tasks
+    command: celery -A tasks worker --loglevel info
+    depends_on:
+      - redis
+    links:
+      - redis
+    restart: always
+
+#docker run -it  -v $(pwd):/home  online_judge_server_web /bin/bash
+#send_email.delay('656233622@qq.com', 'test subject', 'test subject test subject')
